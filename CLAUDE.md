@@ -23,7 +23,7 @@ The scorecard is updated weekly (typically Sundays) and shared with sales leader
 - Filter defaults: `scope = "External"`, `direction = "Conference"`, `duration > 600` seconds
 - Users endpoint paginates at 100 per page; all four reps are known IDs above
 
-## Scoring Framework (v9)
+## Scoring Framework (v10)
 
 Four frameworks, weighted:
 
@@ -84,15 +84,32 @@ The processor extracts: opening/middle/pricing/next-steps/closing segments, spea
 - All data is embedded inline (no external API calls from the HTML)
 - Mobile-responsive layout
 
-## Workflow for Weekly Updates
+## Weekly Automation (v10)
 
-1. Pull calls for the date range: `getCalls` with workspace ID + date range
-2. Filter by rep user IDs, external scope, >10 min duration
-3. Pull transcripts one at a time via `getCallTranscripts`
-4. Process each through `scripts/process_transcript.py`
-5. Score each call against the 6 dimensions
-6. Update `index.html` with new call data
-7. Git commit and push
+Two scheduled tasks handle the weekly cycle automatically:
+
+### Mon-Fri Daily Run (5am ET) — `weekly-ae-scorecard`
+1. Read `index.html` and extract existing scored call IDs (cache)
+2. Pull calls from Gong for current week (Monday–today)
+3. Skip already-scored calls — only process new ones
+4. Pull transcripts one at a time via `getCallTranscripts`
+5. Process each through `scripts/process_transcript.py`
+6. Score new calls against the 6 dimensions
+7. Update `index.html` (add new calls, recalculate rep averages, regenerate coaching)
+8. Git commit and push
+9. Slack summary to Vik Dua (U7K3SBGFR)
+
+### Sunday Lock (5am ET) — `weekly-scorecard-lock`
+1. Archive current week's `reps`, `calls`, `coaching` into `weeklyHistory` array
+2. Clear current week: empty calls, zero rep averages, empty coaching
+3. Update `currentWeekLabel` to next week's date range
+4. Git commit and push
+5. Slack summary of the locked week to Vik
+
+### History Data Model
+- `weeklyHistory`: Array of full weekly snapshots, each with `weekOf`, `weekLabel`, `reps`, `calls`, `coaching`
+- `activeData()`: Helper that returns current week OR archived week data based on `st.historyWeek` state
+- History tab: week list → drill-in → trend lines → coaching history
 
 ## DOCX Output (Optional)
 
@@ -116,7 +133,7 @@ AE-Scorecard/
 │   ├── process_transcript.py          ← Mandatory transcript processor
 │   └── generate_docx_template.js      ← DOCX report generator template
 ├── CHANGELOG.md                       ← Version history (v7 → v8 → v9)
-├── AE-Scorer_v9.skill                 ← Current skill file (ZIP archive)
+├── AE-Scorer_v10.skill                ← Current skill file (ZIP archive, v10)
 └── references/
     └── docx_format.md                 ← DOCX formatting specification
 ```

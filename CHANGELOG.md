@@ -1,5 +1,42 @@
 # AE Scorer — Version Changelog
 
+## v10 (2026-03-30)
+**File**: `AE-Scorer_v10.skill`
+
+### New: Weekly History with Drill-In
+- Dashboard stores full weekly snapshots in `weeklyHistory` array
+- Each archived week contains complete `reps`, `calls`, and `coaching` data
+- History tab shows week list with per-rep scores, clickable drill-in to any past week
+- Drill-in renders full dashboard (overview, meddpicc, compare, call detail) for archived weeks
+- `activeData()` helper routes all views to current or archived data seamlessly
+- Weeks with `summaryOnly: true` show a banner indicating full call detail unavailable
+
+### New: Call Caching
+- Mon-Fri daily runs skip previously scored call IDs — only fetch transcripts and score new calls
+- Dramatically reduces daily run time (from ~60min to minutes on most days)
+- Cache key is the call ID in the `calls` array
+
+### New: Sunday Lock
+- Sunday 5am ET job archives current week to `weeklyHistory`, clears live dashboard
+- Archived weeks are immutable — never modified after lock
+- Dashboard shows empty "No calls scored yet" state until Monday's run
+
+### New: Score Trends
+- History tab includes week-over-week trends table with Team average column
+- Visual trend bar charts per rep across all archived weeks + current
+- Coaching history section per rep showing Keep/Start/Stop across all weeks
+
+### New: Empty Week State
+- Monday mornings show "No calls scored yet this week" placeholder
+- Links to history tab for previous week's data
+- Header updates dynamically for current/archived context
+
+### Enhanced: Mobile Responsive
+- History tab week cards, trend bars, and drill-in all render cleanly on mobile (375px)
+- Archived week banner and back button accessible on small screens
+
+---
+
 ## v9 (2026-03-14)
 **Renamed**: `gong-call-scorer` → `AE-Scorer`
 
