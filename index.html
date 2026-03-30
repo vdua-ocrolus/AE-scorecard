@@ -136,53 +136,119 @@ frameworkCoaching:"The Patriot arc is strong. LoanBeam surfaced Monday, proposal
 }
 };
 
-// History data — populated weekly by automation. Each entry is one week's snapshot.
-// After 3+ entries, the history tab becomes active.
-const history=[
-{weekOf:"2026-03-15",reps:[
-{id:"sam",avg:7.37,n:11,scores:{r:7.5,d:6.9,v:7.6,a:7.4,c:7.1,e:7.4},coaching:{keep:"Team selling produces the highest-quality buying signals on the team — Amy volunteered her own ROI at HMA, Holly Dowd identified and ICE meeting locked at Armed Forces Bank.",start:"Quantify pain in dollar terms — Metrics covered on only 3 of 11 calls.",stop:"Prospect-controlled timelines on high-value deals — LCF, Republic Bank, Shea all surrendered momentum."}},
-{id:"kyle",avg:8.21,n:8,scores:{r:8.1,d:7.9,v:8.4,a:8.3,c:8.6,e:8.5},coaching:{keep:"Deal control and champion activation are best-in-class — HomeBridge same-day close, Kelly at MFS selling internally without being asked.",start:"Probe competition on every call — only 2 of 8 this week.",stop:"Economic buyer unidentified in late-stage deals — 3 of 8 calls, must be resolved before MFS commercials."}},
-{id:"charlie",avg:7.36,n:6,scores:{r:7.3,d:7.2,v:7.7,a:7.7,c:7.0,e:7.5},coaching:{keep:"POV execution produces real buying signals — Presidential (8.00) with 108 rental properties and unprompted champion activation.",start:"Activate implicit champions — 4 of 6 calls had none explicitly identified.",stop:"High talk ratio on discovery calls — AACU 76%, Service CU 75%."}},
-{id:"spencer",avg:7.55,n:3,scores:{r:7.3,d:7.3,v:7.7,a:7.7,c:7.3,e:8.0},coaching:{keep:"Strategic deal intelligence exceptional — Ajay call (8.25) mapped 600-LO merger, surfaced COO as executive buyer in 13 minutes.",start:"Call volume is the foundation — 3 calls is lightest on team, target 5+ per week.",stop:"Vague timelines on high-value deals — post-ICE is too loose for 600-LO merger opportunity."}}
-]},
-{weekOf:"2026-03-22",reps:[
-{id:"sam",avg:6.72,n:3,scores:{r:7.0,d:6.0,v:7.0,a:7.3,c:6.0,e:7.3},coaching:{keep:"ROI toolkit ready — Thompson Kane prospect articulated 30-50% capacity lift, HMA ROI calculator deployed.",start:"Show up and own the POV relationship — Superior National: 42 words in 31 minutes while SE ran the call.",stop:"Letting buying signals evaporate without quantification — Thompson Kane capacity argument needed a dollar value attached."}},
-{id:"kyle",avg:7.69,n:4,scores:{r:8.3,d:7.5,v:7.3,a:7.5,c:7.5,e:8.5},coaching:{keep:"Real-time competitive intel handling elite — Covius 2-vendor reveal extracted, proposal restructured on-call, POC booked.",start:"Book the meeting before hanging up — Gulf Coast POV ended with no next step booked.",stop:"Passive POV closings — accepting 'we'll get back to you' without anchoring a date."}},
-{id:"charlie",avg:7.60,n:2,scores:{r:8.0,d:7.5,v:7.5,a:7.0,c:7.5,e:8.5},coaching:{keep:"POV structure and multi-stakeholder management best on team — First World: 4 stakeholders, 15-file expectation, Thursday booked.",start:"Book the meeting before the call ends — Traditions Demo 68min, Brad volunteered for trial, no next step.",stop:"Ownership group uncharted — Brad mentioned it twice, Charlie never asked who is in that room."}},
-{id:"spencer",avg:7.03,n:2,scores:{r:7.5,d:6.5,v:7.5,a:7.5,c:6.5,e:7.0},coaching:{keep:"Urgency mechanism deployment disciplined — month-end incentive, LoanBeam displacement framing, owners meeting created by consistent pressure.",start:"Let the prospect close themselves — Matt said 'going to be a great tool' and Spencer kept presenting.",stop:"83.5% rep talk ratio on a proposal call — the week's most significant execution gap."}}
-]}
+// Weekly history — each entry is a full snapshot (reps, calls, coaching) for a locked week.
+// Sunday automation archives the current week here and clears the live dashboard.
+const weeklyHistory=[
+{weekOf:"2026-03-09",weekLabel:"Mar 9–13, 2026",
+reps:[
+{id:"sam",name:"Sam Loomis",title:"Enterprise AE",profile:"Relationship Builder",avg:7.37,n:11},
+{id:"kyle",name:"Kyle Swikoski",title:"Dir. Strategic Sales",profile:"Deal Closer",avg:8.21,n:8},
+{id:"charlie",name:"Charlie Allen",title:"Enterprise AE",profile:"Account Grower",avg:7.36,n:6},
+{id:"spencer",name:"Spencer Sobczak",title:"Account Executive",profile:"Technical Advisor",avg:7.55,n:3}
+],
+calls:[], // Summary-only — full call data not available for this week
+coaching:{
+sam:{narrative:"Eleven calls — heaviest week on the team. Strong team selling with Amy at HMA and Holly Dowd at Armed Forces Bank. Metrics coverage at 3 of 11 calls remains the primary gap.",keep:"<strong>Team selling produces the highest-quality buying signals on the team.</strong> HMA: Amy volunteered her own ROI. Armed Forces Bank: identified Holly Dowd as decision maker and locked ICE meeting on the spot.",start:"<strong>Quantify pain in dollar terms.</strong> Metrics covered on only 3 of 11 calls.",stop:"<strong>Prospect-controlled timelines on high-value deals.</strong> LCF, Republic Bank, Shea all surrendered momentum.",frameworkCoaching:""},
+kyle:{narrative:"Eight calls — all high-quality. Deal control and champion activation best-in-class. HomeBridge same-day close. Kelly at MFS selling internally without being asked.",keep:"<strong>Deal control and champion activation are best-in-class.</strong> HomeBridge same-day close, Kelly at MFS selling internally without being asked.",start:"<strong>Probe competition on every call.</strong> Only 2 of 8 this week.",stop:"<strong>Economic buyer unidentified in late-stage deals.</strong> 3 of 8 calls, must be resolved before MFS commercials.",frameworkCoaching:""},
+charlie:{narrative:"Six calls — strong POV execution. Presidential (8.00) with 108 rental properties and unprompted champion activation was the highlight.",keep:"<strong>POV execution produces real buying signals.</strong> Presidential (8.00) with 108 rental properties and unprompted champion activation.",start:"<strong>Activate implicit champions.</strong> 4 of 6 calls had none explicitly identified.",stop:"<strong>High talk ratio on discovery calls.</strong> AACU 76%, Service CU 75%.",frameworkCoaching:""},
+spencer:{narrative:"Three calls — lightest on team but highest per-call quality. Ajay call (8.25) mapped 600-LO merger and surfaced COO as executive buyer in 13 minutes.",keep:"<strong>Strategic deal intelligence exceptional.</strong> Ajay call (8.25) mapped 600-LO merger, surfaced COO as executive buyer in 13 minutes.",start:"<strong>Call volume is the foundation.</strong> 3 calls is lightest on team, target 5+ per week.",stop:"<strong>Vague timelines on high-value deals.</strong> Post-ICE is too loose for 600-LO merger opportunity.",frameworkCoaching:""}
+},
+summaryOnly:true
+},
+{weekOf:"2026-03-16",weekLabel:"Mar 16–20, 2026",
+reps:[
+{id:"sam",name:"Sam Loomis",title:"Enterprise AE",profile:"Relationship Builder",avg:6.72,n:3},
+{id:"kyle",name:"Kyle Swikoski",title:"Dir. Strategic Sales",profile:"Deal Closer",avg:7.69,n:4},
+{id:"charlie",name:"Charlie Allen",title:"Enterprise AE",profile:"Account Grower",avg:7.60,n:2},
+{id:"spencer",name:"Spencer Sobczak",title:"Account Executive",profile:"Technical Advisor",avg:7.03,n:2}
+],
+calls:[
+{id:1,rep:"sam",title:"Thompson Kane Demo",prospect:"John (Owner), Austin (Ops)",date:"Fri 3/20",dur:"61m",type:"Full Demo",stage:"Evaluation",s:{r:8,d:6,v:7,a:8,c:7,e:8},w:7.15,tr:46,m:{M:1,E:0,DC:0,DP:0,IP:1,Ch:0,Co:0},str:["John articulated 30-50% capacity lift without prompting","Austin validated front-end efficiency for processors","Tuesday ROI review and follow-up booked on-call"],opp:["Probe Economic Buyer and decision process before pricing","Reduce SE talk dominance — AE must own the room"],q:"If our capacity goes up 30 to 50 percent with this, I mean, we could grow a lot without hiring more people.",coach:"John volunteering a 30-50% capacity argument before the pricing conversation even started is the highest-quality buying signal a rep can receive. That is Gap Selling executing at its best — the prospect articulating the future state value in their own language. The groundwork that got John to that moment was real.<br><br>The strategic gap is what happened after John said it. That sentence deserved an immediate response: 'John, if we achieve that lift — what does that actually mean in dollar terms for Thompson Kane this year?' One question. It turns a powerful moment into a quantified business case that John now owns and will carry into the contract conversation. Without quantification, that moment evaporates.<br><br>Austin's engagement was a strong signal that was also underutilized. Austin was asking about rental property workflows, Encompass integration, and front-end efficiency gains — he is a potential internal champion. After the call, a direct outreach to Austin: 'Austin, you had great questions about the Encompass workflows — would a 20-minute focused session be useful for your team?' creates a second thread into the account.<br><br>On MEDDPICC: the Economic Buyer and Decision Process remain unidentified on a call that reached pricing. John 'letting Austin in' mid-call suggests John is the decision-maker, but that assumption needs to be validated. 'John, when you decide to move forward on a tool like this, who else is typically part of that conversation?' is a natural close question that unlocks the path to signature.",prep:["Ask John to quantify the capacity lift in dollar terms","Reach out to Austin directly for a focused Encompass workflow deep-dive","Ask about the decision process: who else is involved?","Probe competitive landscape before Tuesday","Build a preliminary ROI model using their team size and estimated file volume"],url:"https://us-29990.app.gong.io/call?id=4567477048525966914"},
+{id:2,rep:"sam",title:"HMA Pricing",prospect:"Amy, Andrew (HMA)",date:"Mon 3/16",dur:"31m",type:"Pricing",stage:"Late Eval",s:{r:8,d:7,v:8,a:8,c:7,e:7},w:7.45,tr:75,m:{M:1,E:0,DC:1,DP:1,IP:0,Ch:1,Co:0},str:["ROI calculator ready — walked through per-processor/UW economics","Offered success-based pricing structure for flexibility","Monday follow-up with product head Becca booked on-call"],opp:["75% rep talk ratio too high even for pricing call","Partner approval path not mapped before close"],q:"When you get done hobnobbing down there in vegas, let me know, let's get back on the phone and walk through that.",coach:"Arriving at a pricing call from ICE with an ROI calculator and a success-based pricing alternative is exactly the preparation this stage demands. Andrew's positive reaction confirms the flexibility framing landed. Monday 10am with Becca and the HMA team is a strong, specific next step.<br><br>The critical data point: 75% rep talk ratio on a pricing call. At the pricing stage, the prospect should be doing the math out loud — not listening. That question, asked three or four times throughout the ROI walkthrough, creates the conversation that builds internal commitment.<br><br>The partner approval element was mentioned but not mapped. Amy referenced partners needing to weigh in, and Sam moved past it. The Voss play here is an accusation audit: 'You're probably thinking the partner approval process is going to slow this down.' Saying the scary thing out loud forces Amy to either confirm or disconfirm.<br><br>For MEDDPICC: Metrics (ROI calc) and Decision Process (partner approval) are touched. The Economic Buyer remains unidentified — who at HMA actually signs?",prep:["Ask: who at HMA approves a contract of this size?","Run an accusation audit on the partner approval","Prepare ROI scenarios in 3 tiers for the Becca call","Confirm March end-of-month pricing deadline creates urgency","Map competitive alternatives"],url:"https://us-29990.app.gong.io/call?id=9085529724274902861"},
+{id:3,rep:"sam",title:"Superior Natl Bank POV",prospect:"Denise, Nicole",date:"Wed 3/19",dur:"31m",type:"POV Check-in",stage:"Testing",s:{r:5,d:5,v:6,a:6,c:4,e:7},w:5.55,tr:3,m:{M:0,E:0,DC:0,DP:1,IP:1,Ch:1,Co:0},str:["Denise and Nicole highly engaged with SE Steph throughout","Tomorrow's meeting prep identified as key priority","Product accuracy validated by the team"],opp:["AE arrived late and contributed 42 words in 31 minutes","SE carried the entire call — AE-prospect relationship at risk"],q:"I really can't say enough about how pleasant of an experience this has been even through some hiccups.",coach:"This was Steph's call, not Sam's. The 42-word contribution on a 31-minute call is the single largest coaching issue this week. The risk is structural, not cosmetic. When the SE owns the relationship, the AE loses leverage at the table when it matters most: pricing, timeline pressure, and closing.<br><br>The product is clearly working — Denise praised the accuracy and the team's responsiveness. That goodwill exists despite Sam's absence.",prep:["Send Denise and Nicole a personal follow-up today","Ask Denise: what questions do you expect from the group tomorrow?","Schedule a 30-minute readout call for after tomorrow's meeting","Map the Economic Buyer","Establish a direct relationship with Nicole as the internal champion"],url:"https://us-29990.app.gong.io/call?id=731956092145352767"},
+{id:4,rep:"kyle",title:"Mission Mortgage POV",prospect:"Leslie (Ops Lead)",date:"Fri 3/20",dur:"49m",type:"POV Test-Drive",stage:"Active Eval",s:{r:8,d:8,v:7,a:8,c:8,e:9},w:8.00,tr:39,m:{M:0,E:0,DC:1,DP:0,IP:1,Ch:1,Co:0},str:["Leslie uploading real files live — highest engagement signal in a POV","Kyle probed bank statement loan complexity and Encompass friction in real-time","Tuesday 11am follow-up booked before ending the call"],opp:["No Metrics established — volume, cost, hours not quantified","Economic Buyer not surfaced despite active evaluation stage"],q:"I'd love to see how this stacks up.",coach:"Leslie uploading files during a live call is the best POV engagement signal available from a transcript. She is not evaluating — she is testing to buy. The 38.5% balanced talk ratio reflects genuine co-discovery, not a rep monologue.<br><br>The quantification gap is consistent across all four of Kyle's calls this week. Leslie mentioned per-file pricing is cost prohibitive on leads without a contract. That is a buying constraint with a dollar value attached.<br><br>The Economic Buyer remains unidentified at active-evaluation stage.",prep:["Quantify the bank statement loan opportunity","Ask Tuesday: who else needs to be involved as we move toward a proposal?","Prepare a tailored ROI model","Probe competitive alternatives","Confirm whether Leslie has budget authority"],url:"https://us-29990.app.gong.io/call?id=5497768588641858238"},
+{id:5,rep:"kyle",title:"TexasBank Proposal",prospect:"Brandon (Champion), John",date:"Fri 3/20",dur:"22m",type:"Proposal Review",stage:"Late Stage",s:{r:8,d:7,v:8,a:9,c:8,e:8},w:7.90,tr:73,m:{M:1,E:1,DC:1,DP:1,IP:0,Ch:1,Co:0},str:["Brandon internally politicking — 'I have a price, I have a contract'","Month-end coupon deployed with natural urgency","Thursday March 26 booked after board meeting — specific and time-bound"],opp:["Competition not probed despite late-stage position","72.9% rep talk for a proposal call — let Brandon close himself"],q:"I have a price, I have a contract. I'm going to approach it as — I'm at the point of presenting.",coach:"Brandon is doing the selling for you. 'I have a price, I have a contract' from a champion mid-call is exceptional. He is actively navigating the internal approval process in real-time on the call. The Thursday March 26 next step, keyed to the board meeting, is precisely the right structure.<br><br>The competition gap is the one risk on a late-stage deal: Kyle did not ask. One question takes 10 seconds and tells you whether you're in a race or a formality.",prep:["Send the contracting packet before Brandon's Monday preparation","Ask: is there anything the board might push back on?","Check: are you evaluating any other solutions?","Confirm vendor questionnaire timeline","Have a ROI one-pager ready for the board"],url:"https://us-29990.app.gong.io/call?id=5063342530324561299"},
+{id:6,rep:"kyle",title:"Gulf Coast Bank POV",prospect:"Benny, Cathy (Ops)",date:"Fri 3/20",dur:"43m",type:"POV Test-Drive",stage:"Active Eval",s:{r:8,d:7,v:7,a:5,c:6,e:8},w:6.75,tr:54,m:{M:0,E:0,DC:1,DP:0,IP:1,Ch:0,Co:0},str:["Active file testing — Cathy and Benny engaged throughout","Income discrepancy analysis demonstrated effectively","Implementation fee waiver on 3-year term positioned well"],opp:["No booked next step — 'I'll send you an email' is deal momentum at rest","Champion not identified — Benny or Cathy? Neither was named"],q:"Sorry Steph, we're driving you all over the place — you're doing great though.",coach:"The technical session went well. The close was the problem. 'We'll talk about it and get back to you' with no booked meeting is a POV that stops moving.<br><br>The Voss play here is a label: 'It sounds like you want a bit more time before committing to a proposal.' If Benny confirms, you ask: 'What would make you feel ready?'<br><br>Champion identification is also unresolved.",prep:["Send follow-up email today with a specific proposed date","Label the stall in the email","Identify champion: Benny or Cathy","Prepare a one-page proposal summary","Leave test environment open"],url:"https://us-29990.app.gong.io/call?id=7558276993123292451"},
+{id:7,rep:"kyle",title:"Covius POV Test-Drive",prospect:"Dustin (Champion)",date:"Fri 3/20",dur:"41m",type:"POV / Discovery",stage:"Active Eval",s:{r:9,d:8,v:7,a:8,c:8,e:9},w:8.10,tr:56,m:{M:1,E:0,DC:1,DP:1,IP:1,Ch:1,Co:1},str:["Dustin revealed 2-vendor onboarding plan — Kyle handled competitive intel perfectly","Kyle restructured proposal in real-time after learning actual document scope","Next Friday POC execution booked — clear and time-bound"],opp:["Economic Buyer not identified despite POC agreement stage","Value quantification missing — no metrics attached to their extraction pain"],q:"We're going to onboard more than one vendor here, probably two.",coach:"The Covius call is the highest-quality call across all four reps this week. When Dustin revealed they're onboarding two vendors, Kyle's response was flawless: he extracted the evaluation criteria, restructured the proposal in real-time, and moved directly to next steps. That is Challenger Sale 'take control' in its most precise form.<br><br>The Economic Buyer gap is the one risk. Dustin mentioned CCO involvement — that means the CCO is likely the economic buyer.",prep:["Send SFTP instructions today","Ask Dustin: should the CCO be part of next Friday's call?","Ask: what does it cost your team today to manually process those 750 pages?","Build the restructured proposal based on 12-13 core docs","Research Covius's compliance requirements"],url:"https://us-29990.app.gong.io/call?id=5518831982071398054"},
+{id:8,rep:"charlie",title:"Traditions Demo (Encompass)",prospect:"Brad (Ops Lead), Dan (Finance)",date:"Wed 3/19",dur:"68m",type:"Full Demo",stage:"Evaluation",s:{r:8,d:7,v:8,a:6,c:7,e:9},w:7.35,tr:34,m:{M:1,E:0,DC:0,DP:1,IP:1,Ch:1,Co:0},str:["68-minute fully engaged demo — Brad and Dan both asked deep technical questions","Brad volunteered for trial/test environment — unprompted buying signal","Crawl-walk-run framing resonated with both contacts"],opp:["No next step booked — Brad said 'I'll circle back' and Charlie accepted it","Ownership group not mapped despite two explicit mentions"],q:"I'd love to do that — if it's a true test, 15 days with no obligation.",coach:"Sixty-eight minutes of genuine engagement is a real signal. The missed moment is the close. Dan said he had a hard stop at 11. That was the signal: pivot to Brad alone.<br><br>The ownership group was mentioned twice and Charlie never asked about it. That group controls the signature, and Charlie has no visibility into it.",prep:["Follow up today with the trial/test environment invite","Ask Brad: who is in the ownership group?","Prepare an ROI summary for the ownership group","Ask Brad's current state pain in dollar terms","Book Thursday explicitly"],url:"https://us-29990.app.gong.io/call?id=2913166878070026346"},
+{id:9,rep:"charlie",title:"First World POV Kickoff",prospect:"Sean, Suzanne, Ryan, Felix",date:"Fri 3/20",dur:"32m",type:"POV Kickoff",stage:"Active Eval",s:{r:8,d:8,v:7,a:8,c:8,e:8},w:7.85,tr:44,m:{M:0,E:0,DC:0,DP:1,IP:1,Ch:1,Co:1},str:["Multi-stakeholder POV kickoff — 4 First World team members present","15-file target and Thursday March 26 review booked cleanly","DeepHaven delegated underwriting pain surfaced — DSCR and non-QM context"],opp:["No Metrics established — neither volume nor cost-per-file quantified","Economic Buyer not identified across a 4-person stakeholder team"],q:"I like that.",coach:"This is the POV execution template. Four stakeholders present, clear expectations set, Thursday March 26 review booked. When Sean mentioned DeepHaven friction, Charlie asked a sharp follow-up — exactly the kind of competitive intelligence that shapes the POV strategy.<br><br>The Metrics and Economic Buyer gaps are consistent across all of Charlie's calls this week.",prep:["Send POV access credentials and file upload instructions today","Prepare a POV scorecard template","Ask Sean Thursday: what was most surprising?","Ask the Economic Buyer question Thursday","Quantify the DSCR/non-QM volume"],url:"https://us-29990.app.gong.io/call?id=4696960713123925237"},
+{id:10,rep:"spencer",title:"Patriot Home Mortgage Demo",prospect:"Leanne (Ops), Matt (Owner)",date:"Mon 3/17",dur:"43m",type:"Demo",stage:"Evaluation",s:{r:8,d:8,v:7,a:7,c:7,e:8},w:7.55,tr:46,m:{M:1,E:0,DC:0,DP:1,IP:1,Ch:1,Co:1},str:["Leanne surfaced LoanBeam replacement opportunity — unprompted buying signal","Non-QM volume increase identified as primary driver","Follow-up booked for next day and SE Steph aligned on conditions product"],opp:["Economic Buyer (Matt) stayed mostly passive — not engaged during demo","SE handled most technical depth"],q:"I'm assuming that I would be able to get rid of loanbeam if we were to move forward with ocrolus?",coach:"Leanne's LoanBeam question is the best sentence on any of Spencer's calls this week. She is figuring out the consolidation story she needs to tell internally.<br><br>Matt was on the call but quiet. 'Matt, given what you're seeing — does this match what you were hoping to accomplish?' One question forces a response.",prep:["Ask Leanne: what does LoanBeam cost annually?","Draw Matt into the conversation on the proposal call","Quantify non-QM pain","Prepare a side-by-side showing LoanBeam displacement","Ask: who needs to approve a contract of this size?"],url:"https://us-29990.app.gong.io/call?id=930688166204165085"},
+{id:11,rep:"spencer",title:"Patriot Proposal Review",prospect:"Matt (Owner), Leanne, Shelly (IT)",date:"Tue 3/18",dur:"31m",type:"Proposal",stage:"Late Stage",s:{r:7,d:5,v:8,a:8,c:6,e:6},w:6.50,tr:84,m:{M:1,E:1,DC:1,DP:1,IP:0,Ch:1,Co:1},str:["Matt committed to owners meeting Monday — 'I'll run it up the flagpole'","Month-end discount and urgency deployed effectively","Tuesday check-in booked before call ended"],opp:["83.5% rep talk ratio on a proposal call — highest flag of the week","Shelly's integration questions needed more preparation"],q:"I think it's going to be a great tool to be honest.",coach:"Matt saying 'I think it's going to be a great tool' is a closing moment. Spencer kept talking.<br><br>In Voss's framework, when a prospect gives you that sentence, the correct response is silence — followed by: 'Matt, it sounds like you believe this is the right decision. What would need to happen for the ownership group to agree on Monday?'<br><br>The 83.5% talk ratio on a proposal call is the week's most significant execution gap.",prep:["Call or text Matt Sunday night","Prepare a 1-page executive summary for the owners meeting","Ask Matt: what objections are you expecting?","Loop Steph in on integration questions","If Tuesday check-in shows owners said yes — have a contract ready"],url:"https://us-29990.app.gong.io/call?id=4326710309454502635"}
+],
+coaching:{
+sam:{narrative:"Three prospect calls — lightest week for Sam. Thompson Kane (7.15): John volunteered a 30-50% capacity lift argument before pricing even started — a genuine Gap Selling moment that was not converted to a quantified business case. HMA Pricing (7.45): clean ROI walkthrough, Monday follow-up booked, but 75% rep talk ratio. Superior National POV check-in (5.55): Sam arrived late and contributed 42 words in 31 minutes while SE Steph ran the entire call. The week's arc tells a single story: strong groundwork being laid, execution gaps in presence and quantification.",keep:"<strong>ROI toolkit readiness is a real strength.</strong> Thompson Kane: John articulated the capacity argument himself — the product was set up for him to do that. HMA: ROI calculator deployed, success-based pricing introduced, Monday booked with product head. When tools are ready and context is set, the groundwork produces results.",start:"<strong>Show up — and take ownership of the room.</strong> Superior National: 42 words in 31 minutes. Sam's name appeared once on that call, in an apology. The SE is carrying the POV relationships and the AE is not building leverage for the close.",stop:"<strong>Letting high-value buying signals evaporate without quantification.</strong> Thompson Kane: John said 30-50% capacity lift — Sam did not ask what that means in dollars. HMA: the partner approval path was mentioned and never mapped.",frameworkCoaching:"The pattern across three calls: <strong>trust is being built on the right deals, but the AE is disappearing at critical moments</strong>.<br><br>Thompson Kane is the best data point. John volunteering the capacity argument is exactly what Gap Selling produces — the prospect defining the future state value in their own language. But Gap Selling requires one more step: converting that statement into a quantified gap.<br><br>The Superior National situation is the structural risk. When the SE owns the POV calls, the AE loses the relationship at the moment it matters most — pricing and close.<br><br><strong>One tactical shift for next week</strong>: on every call, ask one question that only the prospect can answer and that Sam cannot."},
+kyle:{narrative:"Four calls, all POV or evaluation stage — the highest-quality stage portfolio of the week. Covius (8.10): Dustin revealed a 2-vendor evaluation plan and Kyle restructured the proposal in real-time while booking next Friday's POC execution. Mission Mortgage (8.00): Leslie uploaded files live during the call — direct buying action. TexasBank (7.90): Brandon is internally selling for you, board meeting March 26. Gulf Coast (6.75): strong technical session, soft close, no next step booked.",keep:"<strong>Real-time competitive intelligence handling is elite.</strong> Covius: Dustin revealed a two-vendor evaluation. Kyle extracted the criteria, restructured the proposal on-call, and booked POC execution.",start:"<strong>Book the meeting before hanging up — every POV call, every time.</strong> Gulf Coast ended with 'I'll send you an email.' The other three calls all had booked next steps.",stop:"<strong>Passive POV closings.</strong> Gulf Coast: Kyle had the right instinct — asked proposal vs. more testing. But accepted 'we'll get back to you' without anchoring a date.",frameworkCoaching:"Four POV calls in one day reflects a pipeline at scale. <strong>The execution across these calls shows a rep who understands deal stage and adapts accordingly</strong>.<br><br>The Metrics gap is consistent across all four. Gap Selling's quantification imperative: <strong>when the prospect describes pain, your next job is to help them put a dollar value on it</strong>.<br><br>The Economic Buyer is unidentified across all four POV calls. One question, asked on Tuesday: 'As we move toward a proposal — who else on your side needs to be part of that conversation?'"},
+charlie:{narrative:"Two calls, two different closure outcomes. First World POV Kickoff (7.85): multi-stakeholder, clean structure, Thursday March 26 booked — the POV execution template. Traditions Demo (7.35): 68 minutes of genuine engagement, both Brad and Dan asking deep technical questions, Brad volunteering for a trial — and no booked next step.",keep:"<strong>POV structure and multi-stakeholder management are the strongest on the team.</strong> First World: four stakeholders, clear 15-file expectation, trailing docs workflow explained, DeepHaven competitive context surfaced, Thursday review booked.",start:"<strong>Book the meeting before the call ends — especially on high-engagement demos.</strong> Traditions was 68 minutes. Brad said 'I'd love to do that' about the trial. One sentence anchors a date.",stop:"<strong>Letting the ownership group question sit open.</strong> Traditions: Brad mentioned the ownership group twice. Charlie never asked who is in that room.",frameworkCoaching:"The contrast between First World and Traditions tells the whole coaching story. <strong>When structure is applied early, deals advance. When structure is deferred, deals stall.</strong><br><br>On MEDDPICC: Charlie has no Economic Buyer on either call this week. <strong>The question 'who makes the final call?' should be asked on every call before a POV or proposal is initiated</strong>."},
+spencer:{narrative:"Two calls on the same account, two different execution levels. Patriot Home Mortgage Demo (7.55): Leanne surfaced LoanBeam replacement opportunity unprompted — one of the best buying signals of the week. Patriot Proposal Review (6.50): Matt committed to owners meeting Monday, month-end urgency deployed, Tuesday check-in booked. But Spencer talked 83.5% of a proposal call.",keep:"<strong>Urgency mechanism deployment is disciplined and effective.</strong> Both calls: month-end incentive deployed cleanly, LoanBeam displacement framing consistent, March owners meeting created by Spencer's consistent pressure.",start:"<strong>Let the prospect close themselves.</strong> Matt said 'I think it's going to be a great tool to be honest' — that is the closing moment. The correct response is silence.",stop:"<strong>83.5% rep talk ratio on a proposal call.</strong> This is the week's most significant execution gap. Proposal calls are not presentations.",frameworkCoaching:"The Patriot arc is strong. <strong>Spencer is creating urgency better than anyone on the team this week</strong>.<br><br>The 83.5% talk ratio is the one behavioral pattern that will slow all of this down at scale. From Voss: when Matt says 'I think it's going to be a great tool' — that is a 'that's right' moment. <strong>The rep who creates this dynamic wins the deal at the owners meeting without being in the room.</strong>"}
+}
+}
 ];
+// Current week label — updated by automation
+const currentWeekLabel="Mar 23–27, 2026";
 
-let st={rep:"sam",sel:null,view:"overview"};
+let st={rep:"sam",sel:null,view:"overview",historyWeek:null};
 function sc(s){return s>=8.5?"#10b981":s>=7.5?"#3b82f6":"#f59e0b"}
+function activeData(){
+if(st.historyWeek){
+const week=weeklyHistory.find(w=>w.weekOf===st.historyWeek);
+if(week)return{reps:week.reps,calls:week.calls,coaching:week.coaching,weekLabel:week.weekLabel,summaryOnly:week.summaryOnly||false};
+}
+return{reps,calls,coaching,weekLabel:currentWeekLabel,summaryOnly:false};
+}
 function render(){
 const el=document.getElementById("app");
-const f=calls.filter(c=>c.rep===st.rep);
-const rd=reps.find(r=>r.id===st.rep);
-const avg=(f.reduce((a,c)=>a+c.w,0)/f.length).toFixed(2);
-const best=f.reduce((a,c)=>c.w>a.w?c:a,f[0]);
-const det=st.sel?calls.find(c=>c.id===st.sel):null;
-const co=coaching[st.rep];
+const ad=activeData();
+const aReps=ad.reps,aCalls=ad.calls,aCoaching=ad.coaching;
+const f=aCalls.filter(c=>c.rep===st.rep);
+const rd=aReps.find(r=>r.id===st.rep);
+const avg=f.length?(f.reduce((a,c)=>a+c.w,0)/f.length).toFixed(2):"—";
+const best=f.length?f.reduce((a,c)=>c.w>a.w?c:a,f[0]):null;
+const det=st.sel?aCalls.find(c=>c.id===st.sel):null;
+const co=aCoaching[st.rep];
+// Update header
+const subtitle=document.querySelector('#dashboard-content > div:first-child > div:last-child');
+if(subtitle){
+const totalCalls=aCalls.length;
+if(st.historyWeek){subtitle.textContent='Viewing: Week of '+ad.weekLabel+' (Archived) · '+aReps.length+' reps · '+totalCalls+' calls'}
+else if(totalCalls===0){subtitle.textContent='Week of '+currentWeekLabel+' · No calls scored yet this week · Collecting data Mon–Fri'}
+else{subtitle.textContent='Week of '+currentWeekLabel+' · '+aReps.length+' reps · '+totalCalls+' calls · MEDDPICC · Gap Selling · Challenger · Never Split the Difference'}
+}
 let h="";
 
 // Rep tabs
 h+=`<div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">`;
-reps.forEach(r=>{
+aReps.forEach(r=>{
 h+=`<button class="tab ${st.rep===r.id?"active":""}" onclick="st.rep='${r.id}';st.sel=null;st.view='overview';render()"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><div class="name" style="color:${st.rep===r.id?"#e2e8f0":"#64748b"}">${r.name}</div><div class="sub">${r.title} · ${r.n} calls</div></div><div style="font-size:18px;font-weight:700;color:${sc(r.avg)}">${r.avg}</div></div></button>`;
 });
 h+=`</div>`;
+// Back button when viewing archived week
+if(st.historyWeek){
+h+=`<button class="vtab mono" onclick="st.historyWeek=null;st.sel=null;st.view='history';render()" style="margin-bottom:10px;color:#3b82f6;border-color:#3b82f6">← Back to History</button>`;
+h+=`<div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:8px 14px;margin-bottom:14px;font-size:11px;color:#93c5fd">📋 Viewing archived week: <strong>${ad.weekLabel}</strong>${ad.summaryOnly?" · Summary only — full call detail not available for this week":""}</div>`;
+}
 
 // View tabs
 h+=`<div style="display:flex;gap:6px;margin-bottom:14px">`;
-["overview","meddpicc","compare","history"].forEach(v=>{
+const views=st.historyWeek?["overview","meddpicc","compare"]:["overview","meddpicc","compare","history"];
+views.forEach(v=>{
 h+=`<button class="vtab mono ${st.view===v?"active":""}" onclick="st.view='${v}';st.sel=null;render()">${v}</button>`;
 });
 h+=`</div>`;
 
+// Empty week state (only for non-history views)
+const emptyWeek=aCalls.length===0&&!st.historyWeek&&st.view!=="history";
+if(emptyWeek){
+h+=`<div class="card" style="text-align:center;padding:40px 20px">`;
+h+=`<div style="font-size:48px;margin-bottom:12px;opacity:0.3">📞</div>`;
+h+=`<div style="font-size:16px;font-weight:600;color:#64748b;margin-bottom:6px">No calls scored yet this week</div>`;
+h+=`<div style="font-size:12px;color:#475569;line-height:1.6">Calls are pulled and scored automatically Mon–Fri at 5am ET.<br>Check the <span style="color:#3b82f6;cursor:pointer" onclick="st.view='history';render()">history tab</span> for previous weeks.</div>`;
+h+=`</div>`;
+}
+if(!emptyWeek&&st.view!=="history"){
 // KPIs
 h+=`<div class="kpi-grid">`;
-h+=`<div class="card kpi"><div class="label mono">Avg Score</div><div style="font-size:24px;font-weight:700;color:${sc(parseFloat(avg))}">${avg}</div></div>`;
-h+=`<div class="card kpi"><div class="label mono">Best Call</div><div style="font-size:24px;font-weight:700;color:#3b82f6">${best.w}</div></div>`;
+h+=`<div class="card kpi"><div class="label mono">Avg Score</div><div style="font-size:24px;font-weight:700;color:${avg!=="—"?sc(parseFloat(avg)):"#475569"}">${avg}</div></div>`;
+h+=`<div class="card kpi"><div class="label mono">Best Call</div><div style="font-size:24px;font-weight:700;color:#3b82f6">${best?best.w:"—"}</div></div>`;
 h+=`<div class="card kpi"><div class="label mono">Calls</div><div style="font-size:24px;font-weight:700;color:#8b5cf6">${f.length}</div></div>`;
 h+=`<div class="card kpi"><div class="label mono">Profile</div><div style="font-size:15px;font-weight:700;color:#f59e0b">${rd.profile}</div></div>`;
 h+=`</div>`;
@@ -190,18 +256,18 @@ h+=`</div>`;
 // ── COMPARE VIEW ──
 if(st.view==="compare"&&!det){
 h+=`<div class="card" style="overflow-x:auto"><div class="mono" style="font-size:11px;font-weight:600;color:#93c5fd;margin-bottom:12px;letter-spacing:1px">REP COMPARISON</div><table><thead><tr><th>Metric</th>`;
-reps.forEach(r=>{h+=`<th style="text-align:center">${r.name.split(" ")[0]}</th>`});
+aReps.forEach(r=>{h+=`<th style="text-align:center">${r.name.split(" ")[0]}</th>`});
 h+=`</tr></thead><tbody>`;
-[{l:"Avg Score",f:r=>r.avg},{l:"Calls",f:r=>r.n},{l:"Profile",f:r=>r.profile},{l:"MEDDPICC %",f:r=>{const rc=calls.filter(c=>c.rep===r.id);const t=rc.length*7;const h2=rc.reduce((s,c)=>s+MK.filter(k=>c.m[k]).length,0);return Math.round(h2/t*100)+"%"}}].forEach(row=>{
+[{l:"Avg Score",f:r=>r.avg},{l:"Calls",f:r=>r.n},{l:"Profile",f:r=>r.profile},{l:"MEDDPICC %",f:r=>{const rc=aCalls.filter(c=>c.rep===r.id);const t=rc.length*7;if(!t)return"—";const h2=rc.reduce((s,c)=>s+MK.filter(k=>c.m[k]).length,0);return Math.round(h2/t*100)+"%"}}].forEach(row=>{
 h+=`<tr><td style="color:#94a3b8">${row.l}</td>`;
-reps.forEach(r=>{const v=row.f(r);h+=`<td style="text-align:center;font-weight:${typeof v==="number"?700:400};color:${typeof v==="number"?sc(v):"#94a3b8"}">${v}</td>`});
+aReps.forEach(r=>{const v=row.f(r);h+=`<td style="text-align:center;font-weight:${typeof v==="number"?700:400};color:${typeof v==="number"?sc(v):"#94a3b8"}">${v}</td>`});
 h+=`</tr>`;
 });
 // Dimension comparison
 DK.forEach(d=>{
 h+=`<tr><td style="color:#94a3b8">${DL[d]} <span style="color:#475569;font-size:9px">(${DW[d]})</span></td>`;
-reps.forEach(r=>{
-const rc=calls.filter(c=>c.rep===r.id);
+aReps.forEach(r=>{
+const rc=aCalls.filter(c=>c.rep===r.id);
 const davg=rc.length?(rc.reduce((a,c)=>a+c.s[d],0)/rc.length).toFixed(1):"—";
 h+=`<td style="text-align:center;font-weight:600;color:${davg>=8?"#10b981":davg>=7?"#3b82f6":"#f59e0b"}">${davg}</td>`;
 });
@@ -249,62 +315,93 @@ h+=`<td style="text-align:center"><span class="tag mono" style="background:${fb}
 });
 h+=`</tbody></table></div>`;
 }
+} // end if(!emptyWeek) — KPIs, overview, meddpicc, compare
 
 // ── HISTORY VIEW ──
 if(st.view==="history"&&!det){
-const repHist=history.map(w=>{const rh=w.reps.find(r=>r.id===st.rep);return rh?{weekOf:w.weekOf,...rh}:null}).filter(Boolean);
-if(history.length<3){
-h+=`<div class="card" style="text-align:center;padding:40px 20px">`;
-h+=`<div style="font-size:48px;margin-bottom:12px;opacity:0.3">📊</div>`;
-h+=`<div style="font-size:16px;font-weight:600;color:#64748b;margin-bottom:6px">Collecting History</div>`;
-h+=`<div style="font-size:12px;color:#475569;line-height:1.6">Score trends and weekly coaching will appear here after 3 weeks of data.<br>`;
-h+=`<span style="color:#3b82f6;font-weight:600">${history.length}/3 weeks</span> collected so far.</div>`;
-h+=`<div style="margin-top:16px;display:flex;gap:6px;justify-content:center">`;
-for(let i=0;i<3;i++){
-h+=`<div style="width:32px;height:32px;border-radius:6px;border:2px solid ${i<history.length?"#10b981":"#1e293b"};background:${i<history.length?"rgba(16,185,129,0.1)":"transparent"};display:flex;align-items:center;justify-content:center;font-size:11px;color:${i<history.length?"#10b981":"#475569"}">${i<history.length?"✓":i+1}</div>`;
-}
-h+=`</div></div>`;
-} else {
-// Score trend table
-h+=`<div class="card"><div class="mono" style="font-size:10px;font-weight:600;color:#93c5fd;margin-bottom:10px;letter-spacing:1px">SCORE TREND — ${rd.name}</div>`;
-h+=`<table><thead><tr><th>Week</th><th style="text-align:center">Avg</th><th style="text-align:center">Calls</th>`;
-DK.forEach(d=>{h+=`<th style="text-align:center">${DL[d].slice(0,3)}</th>`});
-h+=`</tr></thead><tbody>`;
-repHist.forEach(w=>{
-h+=`<tr><td class="mono" style="color:#94a3b8;font-size:10px">${w.weekOf}</td>`;
-h+=`<td style="text-align:center;font-weight:700;color:${sc(w.avg)}">${w.avg}</td>`;
-h+=`<td style="text-align:center;color:#8b5cf6">${w.n}</td>`;
-DK.forEach(d=>{
-const v=w.scores[d];
-h+=`<td style="text-align:center;color:${v>=8?"#10b981":v>=7?"#3b82f6":"#f59e0b"}">${v.toFixed(1)}</td>`;
+// Week list with drill-in
+h+=`<div class="card"><div class="mono" style="font-size:10px;font-weight:600;color:#93c5fd;margin-bottom:12px;letter-spacing:1px">WEEKLY SCORECARDS</div>`;
+// Current week row
+const curTotal=calls.length;
+const curTeamAvg=curTotal?((calls.reduce((a,c)=>a+c.w,0))/curTotal).toFixed(2):"—";
+h+=`<div class="history-week" style="border-left-color:#3b82f6;background:rgba(59,130,246,0.04);margin-bottom:8px">`;
+h+=`<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">`;
+h+=`<div><div style="font-size:13px;font-weight:600;color:#e2e8f0">${currentWeekLabel} <span class="tag" style="background:rgba(59,130,246,0.15);color:#3b82f6;margin-left:6px">CURRENT</span></div>`;
+h+=`<div style="font-size:10px;color:#64748b;margin-top:2px">${curTotal} calls · Team avg: ${curTeamAvg}</div></div>`;
+h+=`<div style="display:flex;gap:12px;align-items:center">`;
+reps.forEach(r=>{h+=`<div style="text-align:center"><div style="font-size:9px;color:#475569">${r.name.split(" ")[0]}</div><div style="font-size:14px;font-weight:700;color:${sc(r.avg)}">${r.avg}</div><div style="font-size:8px;color:#475569">${r.n} calls</div></div>`});
+h+=`</div></div></div>`;
+// Archived weeks (newest first)
+weeklyHistory.slice().reverse().forEach(w=>{
+const wTotal=w.calls.length;
+const wTeamAvg=wTotal?((w.calls.reduce((a,c)=>a+c.w,0))/wTotal).toFixed(2):(w.reps.reduce((a,r)=>a+r.avg,0)/w.reps.length).toFixed(2);
+h+=`<div class="history-week" style="cursor:pointer" onclick="st.historyWeek='${w.weekOf}';st.view='overview';st.sel=null;render()">`;
+h+=`<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">`;
+h+=`<div><div style="font-size:13px;font-weight:600;color:#e2e8f0">${w.weekLabel} ${w.summaryOnly?'<span class="tag" style="background:rgba(245,158,11,0.15);color:#f59e0b;margin-left:6px">SUMMARY</span>':''}</div>`;
+h+=`<div style="font-size:10px;color:#64748b;margin-top:2px">${wTotal||w.reps.reduce((a,r)=>a+r.n,0)} calls · Team avg: ${wTeamAvg}</div></div>`;
+h+=`<div style="display:flex;gap:12px;align-items:center">`;
+w.reps.forEach(r=>{h+=`<div style="text-align:center"><div style="font-size:9px;color:#475569">${r.name.split(" ")[0]}</div><div style="font-size:14px;font-weight:700;color:${sc(r.avg)}">${r.avg}</div><div style="font-size:8px;color:#475569">${r.n} calls</div></div>`});
+h+=`<div style="color:#475569;font-size:16px">›</div>`;
+h+=`</div></div></div>`;
 });
+h+=`</div>`;
+
+// Week-over-week trend per rep
+if(weeklyHistory.length>=1){
+h+=`<div class="card"><div class="mono" style="font-size:10px;font-weight:600;color:#93c5fd;margin-bottom:12px;letter-spacing:1px">SCORE TRENDS — ALL REPS</div>`;
+const allWeeks=[...weeklyHistory,{weekOf:"current",weekLabel:currentWeekLabel,reps}];
+h+=`<table><thead><tr><th>Week</th>`;
+reps.forEach(r=>{h+=`<th style="text-align:center">${r.name.split(" ")[0]}</th>`});
+h+=`<th style="text-align:center">Team</th></tr></thead><tbody>`;
+allWeeks.forEach((w,wi)=>{
+const isCurrent=w.weekOf==="current";
+h+=`<tr${isCurrent?' style="background:rgba(59,130,246,0.04)"':''}>`;
+h+=`<td class="mono" style="color:#94a3b8;font-size:10px">${w.weekLabel.split(",")[0]}</td>`;
+let teamSum=0,teamN=0;
+reps.forEach(r=>{
+const wr=w.reps.find(wr2=>wr2.id===r.id);
+if(wr){teamSum+=wr.avg;teamN++;h+=`<td style="text-align:center;font-weight:700;color:${sc(wr.avg)}">${wr.avg}</td>`}
+else{h+=`<td style="text-align:center;color:#475569">—</td>`}
+});
+const teamAvg=teamN?(teamSum/teamN).toFixed(2):"—";
+h+=`<td style="text-align:center;font-weight:700;color:${typeof teamAvg==='number'?sc(teamAvg):sc(parseFloat(teamAvg))}">${teamAvg}</td>`;
 h+=`</tr>`;
 });
-h+=`</tbody></table></div>`;
+h+=`</tbody></table>`;
 
-// Visual trend bars
-h+=`<div class="card"><div class="mono" style="font-size:10px;font-weight:600;color:#93c5fd;margin-bottom:10px;letter-spacing:1px">WEEKLY TREND</div>`;
-h+=`<div style="display:flex;align-items:end;gap:8px;height:60px;padding:0 4px">`;
-repHist.forEach((w,i)=>{
-const pct=((w.avg-5)/5)*100;
-h+=`<div style="flex:1;text-align:center"><div style="height:${Math.max(pct,10)}%;background:${sc(w.avg)};border-radius:3px 3px 0 0;min-height:8px;margin:0 auto;max-width:40px;position:relative;height:${pct}px">`;
-h+=`<div style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:600;color:${sc(w.avg)}">${w.avg}</div>`;
-h+=`</div><div class="mono" style="font-size:8px;color:#475569;margin-top:4px">${w.weekOf.slice(5)}</div></div>`;
+// Visual trend bars per rep
+h+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:16px">`;
+reps.forEach(r=>{
+h+=`<div><div style="font-size:11px;font-weight:600;color:#e2e8f0;margin-bottom:8px">${r.name}</div>`;
+h+=`<div class="trend-bar">`;
+allWeeks.forEach(w=>{
+const wr=w.reps.find(wr2=>wr2.id===r.id);
+if(wr){
+const pct=Math.max(((wr.avg-5)/5)*60,8);
+h+=`<div class="trend-col" style="height:${pct}px;background:${sc(wr.avg)};flex:1;position:relative" title="${w.weekLabel}: ${wr.avg}"><div style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:8px;font-weight:600;color:${sc(wr.avg)}">${wr.avg}</div></div>`;
+}
+});
+h+=`</div>`;
+h+=`<div style="display:flex;gap:3px;margin-top:2px">`;
+allWeeks.forEach(w=>{h+=`<div style="flex:1;text-align:center;font-size:7px;color:#475569" class="mono">${w.weekLabel.split("–")[0].split(" ").pop()}</div>`});
+h+=`</div></div>`;
 });
 h+=`</div></div>`;
+}
 
-// Weekly coaching history
+// Coaching history per selected rep
 h+=`<div class="card"><div class="mono" style="font-size:10px;font-weight:600;color:#93c5fd;margin-bottom:10px;letter-spacing:1px">COACHING HISTORY — ${rd.name}</div>`;
-repHist.slice().reverse().forEach(w=>{
-h+=`<div class="history-week"><div class="mono" style="font-size:10px;color:#64748b;margin-bottom:6px">Week of ${w.weekOf}</div>`;
+weeklyHistory.slice().reverse().forEach(w=>{
+const wco=w.coaching[st.rep];
+if(!wco)return;
+h+=`<div class="history-week"><div class="mono" style="font-size:10px;color:#64748b;margin-bottom:6px">Week of ${w.weekLabel}</div>`;
 h+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px">`;
-h+=`<div><div style="font-size:9px;font-weight:600;color:#10b981;margin-bottom:2px">KEEP</div><div style="font-size:10px;color:#94a3b8;line-height:1.4">${w.coaching.keep}</div></div>`;
-h+=`<div><div style="font-size:9px;font-weight:600;color:#f59e0b;margin-bottom:2px">START</div><div style="font-size:10px;color:#94a3b8;line-height:1.4">${w.coaching.start}</div></div>`;
-h+=`<div><div style="font-size:9px;font-weight:600;color:#ef4444;margin-bottom:2px">STOP</div><div style="font-size:10px;color:#94a3b8;line-height:1.4">${w.coaching.stop}</div></div>`;
+h+=`<div><div style="font-size:9px;font-weight:600;color:#10b981;margin-bottom:2px">KEEP</div><div style="font-size:10px;color:#94a3b8;line-height:1.4">${wco.keep}</div></div>`;
+h+=`<div><div style="font-size:9px;font-weight:600;color:#f59e0b;margin-bottom:2px">START</div><div style="font-size:10px;color:#94a3b8;line-height:1.4">${wco.start}</div></div>`;
+h+=`<div><div style="font-size:9px;font-weight:600;color:#ef4444;margin-bottom:2px">STOP</div><div style="font-size:10px;color:#94a3b8;line-height:1.4">${wco.stop}</div></div>`;
 h+=`</div></div>`;
 });
 h+=`</div>`;
-}
 }
 
 // ── CALL DETAIL VIEW ──
@@ -330,7 +427,7 @@ if(det.q){h+=`<div class="card"><div class="mono" style="font-size:10px;font-wei
 h+=`<a href="${det.url}" target="_blank" class="mono" style="font-size:10px;display:inline-block;margin-top:8px">View in Gong →</a>`;
 }
 
-h+=`<div style="margin-top:20px;text-align:center;font-size:9px;color:#1e293b" class="mono">v9 rubric · MEDDPICC 30% · Gap Selling 30% · Challenger 25% · NSTD 15% · ${calls.length} calls · 4 reps</div>`;
+h+=`<div style="margin-top:20px;text-align:center;font-size:9px;color:#1e293b" class="mono">v9 rubric · MEDDPICC 30% · Gap Selling 30% · Challenger 25% · NSTD 15% · ${aCalls.length} calls · ${aReps.length} reps</div>`;
 el.innerHTML=h;
 }
 render();
