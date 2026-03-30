@@ -80,6 +80,7 @@ th,td{padding:4px 5px;font-size:10px;white-space:nowrap}
 </div>
 <div id="app"></div>
 <script>
+// @@DATA_START@@
 const reps=[
 {id:"sam",name:"Sam Loomis",title:"Enterprise AE",profile:"Relationship Builder",avg:0,n:0},
 {id:"kyle",name:"Kyle Swikoski",title:"Dir. Strategic Sales",profile:"Deal Closer",avg:0,n:0},
@@ -221,6 +222,7 @@ spencer:{narrative:"Two calls on the same account, two different execution level
 ];
 // Current week label — updated by automation
 const currentWeekLabel="Mar 30 – Apr 3, 2026";
+// @@DATA_END@@
 
 let st={rep:"sam",sel:null,view:"overview",historyWeek:null,expandedWeek:null};
 function sc(s){return s>=8.5?"#10b981":s>=7.5?"#3b82f6":"#f59e0b"}
