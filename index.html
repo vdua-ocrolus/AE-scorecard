@@ -328,12 +328,28 @@ h+=`<div style="font-size:12px;color:#94a3b8;line-height:1.8">${co.frameworkCoac
 h+=`</div>`;
 }
 // Call list (below coaching)
+if(st.historyWeek){
+// Archived week: show ALL calls grouped by rep
+h+=`<div class="mono" style="font-size:10px;font-weight:600;color:#93c5fd;margin-bottom:8px;letter-spacing:1px;text-transform:uppercase">All Calls — ${ad.weekLabel}</div>`;
+aReps.forEach(r=>{
+const rc=aCalls.filter(c=>c.rep===r.id);
+if(!rc.length)return;
+h+=`<div style="font-size:11px;font-weight:600;color:${st.rep===r.id?'#e2e8f0':'#64748b'};margin:12px 0 6px;cursor:pointer" onclick="st.rep='${r.id}';st.sel=null;render()">${r.name} <span style="font-size:9px;color:#475569;font-weight:400">${rc.length} calls · avg ${(rc.reduce((a,c)=>a+c.w,0)/rc.length).toFixed(2)}</span></div>`;
+rc.forEach(c=>{
+h+=`<div class="card call-row" style="border-left-color:${sc(c.w)}" onclick="st.rep='${r.id}';st.sel=${c.id};render()"><div style="display:flex;justify-content:space-between;align-items:center;gap:6px"><div style="flex:1;min-width:160px"><div style="font-size:13px;font-weight:600">${c.title}</div><div style="font-size:10px;color:#64748b">${c.prospect} · ${c.date} · ${c.dur}</div></div><div style="display:flex;gap:2px" class="dots-wrap">`;
+MK.forEach(k=>{h+=`<span class="dot ${c.m[k]?"dot-on":"dot-off"}"></span>`});
+h+=`</div><div style="font-size:18px;font-weight:700;color:${sc(c.w)};min-width:36px;text-align:right">${c.w}</div><div style="color:#475569">›</div></div></div>`;
+});
+});
+}else{
+// Current week: show selected rep's calls only
 h+=`<div class="mono" style="font-size:10px;font-weight:600;color:#93c5fd;margin-bottom:8px;letter-spacing:1px;text-transform:uppercase">Calls This Week</div>`;
 f.forEach(c=>{
 h+=`<div class="card call-row" style="border-left-color:${sc(c.w)}" onclick="st.sel=${c.id};render()"><div style="display:flex;justify-content:space-between;align-items:center;gap:6px"><div style="flex:1;min-width:160px"><div style="font-size:13px;font-weight:600">${c.title}</div><div style="font-size:10px;color:#64748b">${c.prospect} · ${c.date} · ${c.dur}</div></div><div style="display:flex;gap:2px" class="dots-wrap">`;
 MK.forEach(k=>{h+=`<span class="dot ${c.m[k]?"dot-on":"dot-off"}"></span>`});
 h+=`</div><div style="font-size:18px;font-weight:700;color:${sc(c.w)};min-width:36px;text-align:right">${c.w}</div><div style="color:#475569">›</div></div></div>`;
 });
+}
 }
 
 // ── MEDDPICC VIEW ──
