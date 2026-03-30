@@ -186,7 +186,7 @@ spencer:{narrative:"Two calls on the same account, two different execution level
 // Current week label — updated by automation
 const currentWeekLabel="Mar 23–27, 2026";
 
-let st={rep:"sam",sel:null,view:"overview",historyWeek:null};
+let st={rep:"sam",sel:null,view:"overview",historyWeek:null,expandedWeek:null};
 function sc(s){return s>=8.5?"#10b981":s>=7.5?"#3b82f6":"#f59e0b"}
 function activeData(){
 if(st.historyWeek){
@@ -319,35 +319,25 @@ h+=`</tbody></table></div>`;
 
 // ── HISTORY VIEW ──
 if(st.view==="history"&&!det){
-// Week list with drill-in
-h+=`<div class="card"><div class="mono" style="font-size:10px;font-weight:600;color:#93c5fd;margin-bottom:12px;letter-spacing:1px">WEEKLY SCORECARDS</div>`;
-// Current week row
-const curTotal=calls.length;
-const curTeamAvg=curTotal?((calls.reduce((a,c)=>a+c.w,0))/curTotal).toFixed(2):"—";
-h+=`<div class="history-week" style="border-left-color:#3b82f6;background:rgba(59,130,246,0.04);margin-bottom:8px">`;
-h+=`<div style="font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:4px">${currentWeekLabel} <span class="tag" style="background:rgba(59,130,246,0.15);color:#3b82f6;margin-left:6px">CURRENT</span></div>`;
-h+=`<div style="font-size:10px;color:#64748b;margin-bottom:8px">${curTotal} calls · Team avg: ${curTeamAvg}</div>`;
-h+=`<div style="display:flex;gap:12px;align-items:center">`;
-reps.forEach(r=>{h+=`<div style="text-align:center"><div style="font-size:9px;color:#475569">${r.name.split(" ")[0]}</div><div style="font-size:14px;font-weight:700;color:${sc(r.avg)}">${r.avg}</div><div style="font-size:8px;color:#475569">${r.n} calls</div></div>`});
-h+=`</div></div>`;
-// Archived weeks (newest first)
+const allWeeks=[...weeklyHistory,{weekOf:"current",weekLabel:currentWeekLabel,reps}];
+
+// 1. Coaching history per selected rep (top — changes per rep)
+h+=`<div class="card"><div class="mono" style="font-size:10px;font-weight:600;color:#93c5fd;margin-bottom:10px;letter-spacing:1px">COACHING HISTORY — ${rd.name}</div>`;
 weeklyHistory.slice().reverse().forEach(w=>{
-const wTotal=w.calls.length;
-const wTeamAvg=wTotal?((w.calls.reduce((a,c)=>a+c.w,0))/wTotal).toFixed(2):(w.reps.reduce((a,r)=>a+r.avg,0)/w.reps.length).toFixed(2);
-h+=`<div class="history-week" style="cursor:pointer" onclick="st.historyWeek='${w.weekOf}';st.view='overview';st.sel=null;render()">`;
-h+=`<div style="font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:4px">${w.weekLabel} ${w.summaryOnly?'<span class="tag" style="background:rgba(245,158,11,0.15);color:#f59e0b;margin-left:6px">SUMMARY</span>':''}</div>`;
-h+=`<div style="font-size:10px;color:#64748b;margin-bottom:8px">${wTotal||w.reps.reduce((a,r)=>a+r.n,0)} calls · Team avg: ${wTeamAvg}</div>`;
-h+=`<div style="display:flex;gap:12px;align-items:center">`;
-w.reps.forEach(r=>{h+=`<div style="text-align:center"><div style="font-size:9px;color:#475569">${r.name.split(" ")[0]}</div><div style="font-size:14px;font-weight:700;color:${sc(r.avg)}">${r.avg}</div><div style="font-size:8px;color:#475569">${r.n} calls</div></div>`});
-h+=`<div style="color:#475569;font-size:16px">›</div>`;
+const wco=w.coaching[st.rep];
+if(!wco)return;
+h+=`<div class="history-week"><div class="mono" style="font-size:10px;color:#64748b;margin-bottom:6px">Week of ${w.weekLabel}</div>`;
+h+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px">`;
+h+=`<div><div style="font-size:9px;font-weight:600;color:#10b981;margin-bottom:2px">KEEP</div><div style="font-size:10px;color:#94a3b8;line-height:1.4">${wco.keep}</div></div>`;
+h+=`<div><div style="font-size:9px;font-weight:600;color:#f59e0b;margin-bottom:2px">START</div><div style="font-size:10px;color:#94a3b8;line-height:1.4">${wco.start}</div></div>`;
+h+=`<div><div style="font-size:9px;font-weight:600;color:#ef4444;margin-bottom:2px">STOP</div><div style="font-size:10px;color:#94a3b8;line-height:1.4">${wco.stop}</div></div>`;
 h+=`</div></div>`;
 });
 h+=`</div>`;
 
-// Week-over-week trend per rep
+// 2. Score trends with call counts (middle — all reps at a glance)
 if(weeklyHistory.length>=1){
-h+=`<div class="card"><div class="mono" style="font-size:10px;font-weight:600;color:#93c5fd;margin-bottom:12px;letter-spacing:1px">SCORE TRENDS — ALL REPS</div>`;
-const allWeeks=[...weeklyHistory,{weekOf:"current",weekLabel:currentWeekLabel,reps}];
+h+=`<div class="card"><div class="mono" style="font-size:10px;font-weight:600;color:#93c5fd;margin-bottom:12px;letter-spacing:1px">SCORE TRENDS</div>`;
 h+=`<table><thead><tr><th>Week</th>`;
 reps.forEach(r=>{h+=`<th style="text-align:center">${r.name.split(" ")[0]}</th>`});
 h+=`<th style="text-align:center">Team</th></tr></thead><tbody>`;
@@ -358,7 +348,7 @@ h+=`<td class="mono" style="color:#94a3b8;font-size:10px">${w.weekLabel.split(",
 let teamSum=0,teamN=0;
 reps.forEach(r=>{
 const wr=w.reps.find(wr2=>wr2.id===r.id);
-if(wr){teamSum+=wr.avg;teamN++;h+=`<td style="text-align:center;font-weight:700;color:${sc(wr.avg)}">${wr.avg}</td>`}
+if(wr){teamSum+=wr.avg;teamN++;h+=`<td style="text-align:center"><span style="font-weight:700;color:${sc(wr.avg)}">${wr.avg}</span><div style="font-size:8px;color:#475569">${wr.n} calls</div></td>`}
 else{h+=`<td style="text-align:center;color:#475569">—</td>`}
 });
 const teamAvg=teamN?(teamSum/teamN).toFixed(2):"—";
@@ -387,17 +377,73 @@ h+=`</div></div>`;
 h+=`</div></div>`;
 }
 
-// Coaching history per selected rep
-h+=`<div class="card"><div class="mono" style="font-size:10px;font-weight:600;color:#93c5fd;margin-bottom:10px;letter-spacing:1px">COACHING HISTORY — ${rd.name}</div>`;
+// 3. Weekly scorecards with expand/collapse (bottom — browse past weeks inline)
+h+=`<div class="card"><div class="mono" style="font-size:10px;font-weight:600;color:#93c5fd;margin-bottom:12px;letter-spacing:1px">WEEKLY SCORECARDS</div>`;
+// Current week row
+const curTotal=calls.length;
+const curTeamAvg=curTotal?((calls.reduce((a,c)=>a+c.w,0))/curTotal).toFixed(2):"—";
+const curExpanded=st.expandedWeek==="current";
+h+=`<div class="history-week" style="border-left-color:#3b82f6;background:rgba(59,130,246,0.04);margin-bottom:8px;cursor:pointer" onclick="st.expandedWeek=st.expandedWeek==='current'?null:'current';render()">`;
+h+=`<div style="display:flex;justify-content:space-between;align-items:center">`;
+h+=`<div><div style="font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:4px">${currentWeekLabel} <span class="tag" style="background:rgba(59,130,246,0.15);color:#3b82f6;margin-left:6px">CURRENT</span></div>`;
+h+=`<div style="font-size:10px;color:#64748b;margin-bottom:8px">${curTotal} calls · Team avg: ${curTeamAvg}</div></div>`;
+h+=`<div style="color:#475569;font-size:14px;transition:transform .15s;transform:rotate(${curExpanded?90:0}deg)">›</div>`;
+h+=`</div>`;
+h+=`<div style="display:flex;gap:12px;align-items:center">`;
+reps.forEach(r=>{h+=`<div style="text-align:center"><div style="font-size:9px;color:#475569">${r.name.split(" ")[0]}</div><div style="font-size:14px;font-weight:700;color:${sc(r.avg)}">${r.avg}</div><div style="font-size:8px;color:#475569">${r.n} calls</div></div>`});
+h+=`</div>`;
+if(curExpanded){
+const curRepCalls=calls.filter(c=>c.rep===st.rep);
+if(curRepCalls.length){
+h+=`<div style="margin-top:10px;border-top:1px solid #1e293b;padding-top:10px">`;
+h+=`<div style="font-size:10px;color:#64748b;margin-bottom:6px">${rd.name}'s calls</div>`;
+curRepCalls.forEach(c=>{
+h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-radius:4px;margin-bottom:4px;background:rgba(30,41,59,0.5);cursor:pointer" onclick="event.stopPropagation();st.expandedWeek=null;st.view='overview';st.sel=${c.id};render()">`;
+h+=`<div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.title}</div>`;
+h+=`<div style="font-size:9px;color:#475569">${c.prospect} · ${c.date} · ${c.dur}</div></div>`;
+h+=`<div style="font-size:14px;font-weight:700;color:${sc(c.w)};margin-left:8px">${c.w}</div></div>`;
+});
+h+=`<div style="margin-top:6px;text-align:right"><span style="font-size:10px;color:#3b82f6;cursor:pointer" onclick="event.stopPropagation();st.expandedWeek=null;st.view='overview';st.sel=null;render()">View full week →</span></div>`;
+h+=`</div>`;
+}else{
+h+=`<div style="margin-top:10px;border-top:1px solid #1e293b;padding-top:10px;font-size:11px;color:#475569">No calls scored yet this week</div>`;
+}
+}
+h+=`</div>`;
+// Archived weeks (newest first)
 weeklyHistory.slice().reverse().forEach(w=>{
-const wco=w.coaching[st.rep];
-if(!wco)return;
-h+=`<div class="history-week"><div class="mono" style="font-size:10px;color:#64748b;margin-bottom:6px">Week of ${w.weekLabel}</div>`;
-h+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px">`;
-h+=`<div><div style="font-size:9px;font-weight:600;color:#10b981;margin-bottom:2px">KEEP</div><div style="font-size:10px;color:#94a3b8;line-height:1.4">${wco.keep}</div></div>`;
-h+=`<div><div style="font-size:9px;font-weight:600;color:#f59e0b;margin-bottom:2px">START</div><div style="font-size:10px;color:#94a3b8;line-height:1.4">${wco.start}</div></div>`;
-h+=`<div><div style="font-size:9px;font-weight:600;color:#ef4444;margin-bottom:2px">STOP</div><div style="font-size:10px;color:#94a3b8;line-height:1.4">${wco.stop}</div></div>`;
-h+=`</div></div>`;
+const wTotal=w.calls.length;
+const wTeamAvg=wTotal?((w.calls.reduce((a,c)=>a+c.w,0))/wTotal).toFixed(2):(w.reps.reduce((a,r)=>a+r.avg,0)/w.reps.length).toFixed(2);
+const isExpanded=st.expandedWeek===w.weekOf;
+h+=`<div class="history-week" style="cursor:pointer" onclick="st.expandedWeek=st.expandedWeek==='${w.weekOf}'?null:'${w.weekOf}';render()">`;
+h+=`<div style="display:flex;justify-content:space-between;align-items:center">`;
+h+=`<div><div style="font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:4px">${w.weekLabel} ${w.summaryOnly?'<span class="tag" style="background:rgba(245,158,11,0.15);color:#f59e0b;margin-left:6px">SUMMARY</span>':''}</div>`;
+h+=`<div style="font-size:10px;color:#64748b;margin-bottom:8px">${wTotal||w.reps.reduce((a,r)=>a+r.n,0)} calls · Team avg: ${wTeamAvg}</div></div>`;
+h+=`<div style="color:#475569;font-size:14px;transition:transform .15s;transform:rotate(${isExpanded?90:0}deg)">›</div>`;
+h+=`</div>`;
+h+=`<div style="display:flex;gap:12px;align-items:center">`;
+w.reps.forEach(r=>{h+=`<div style="text-align:center"><div style="font-size:9px;color:#475569">${r.name.split(" ")[0]}</div><div style="font-size:14px;font-weight:700;color:${sc(r.avg)}">${r.avg}</div><div style="font-size:8px;color:#475569">${r.n} calls</div></div>`});
+h+=`</div>`;
+if(isExpanded){
+const wRepCalls=w.calls.filter(c=>c.rep===st.rep);
+if(wRepCalls.length){
+h+=`<div style="margin-top:10px;border-top:1px solid #1e293b;padding-top:10px">`;
+h+=`<div style="font-size:10px;color:#64748b;margin-bottom:6px">${rd.name}'s calls</div>`;
+wRepCalls.forEach(c=>{
+h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-radius:4px;margin-bottom:4px;background:rgba(30,41,59,0.5);cursor:pointer" onclick="event.stopPropagation();st.historyWeek='${w.weekOf}';st.expandedWeek=null;st.view='overview';st.sel=${c.id};render()">`;
+h+=`<div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.title}</div>`;
+h+=`<div style="font-size:9px;color:#475569">${c.prospect} · ${c.date} · ${c.dur}</div></div>`;
+h+=`<div style="font-size:14px;font-weight:700;color:${sc(c.w)};margin-left:8px">${c.w}</div></div>`;
+});
+h+=`<div style="margin-top:6px;text-align:right"><span style="font-size:10px;color:#3b82f6;cursor:pointer" onclick="event.stopPropagation();st.historyWeek='${w.weekOf}';st.expandedWeek=null;st.view='overview';st.sel=null;render()">View full week →</span></div>`;
+h+=`</div>`;
+}else if(w.summaryOnly){
+h+=`<div style="margin-top:10px;border-top:1px solid #1e293b;padding-top:10px;font-size:11px;color:#475569">Summary only — full call detail not available for this week</div>`;
+}else{
+h+=`<div style="margin-top:10px;border-top:1px solid #1e293b;padding-top:10px;font-size:11px;color:#475569">No calls for ${rd.name} this week</div>`;
+}
+}
+h+=`</div>`;
 });
 h+=`</div>`;
 }
