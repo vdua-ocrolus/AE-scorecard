@@ -81,10 +81,10 @@ th,td{padding:4px 5px;font-size:10px;white-space:nowrap}
 <div id="app"></div>
 <script>
 const reps=[
-{id:"sam",name:"Sam Loomis",title:"Enterprise AE",profile:"Relationship Builder",avg:6.72,n:3},
-{id:"kyle",name:"Kyle Swikoski",title:"Dir. Strategic Sales",profile:"Deal Closer",avg:7.69,n:4},
-{id:"charlie",name:"Charlie Allen",title:"Enterprise AE",profile:"Account Grower",avg:7.60,n:2},
-{id:"spencer",name:"Spencer Sobczak",title:"Account Executive",profile:"Technical Advisor",avg:7.03,n:2}
+{id:"sam",name:"Sam Loomis",title:"Enterprise AE",profile:"Relationship Builder",avg:0,n:0},
+{id:"kyle",name:"Kyle Swikoski",title:"Dir. Strategic Sales",profile:"Deal Closer",avg:0,n:0},
+{id:"charlie",name:"Charlie Allen",title:"Enterprise AE",profile:"Account Grower",avg:0,n:0},
+{id:"spencer",name:"Spencer Sobczak",title:"Account Executive",profile:"Technical Advisor",avg:0,n:0}
 ];
 const MK=["M","E","DC","DP","IP","Ch","Co"];
 const ML={M:"Metrics",E:"Econ Buyer",DC:"Decision Criteria",DP:"Decision Process",IP:"Identify Pain",Ch:"Champion",Co:"Competition"};
@@ -92,6 +92,14 @@ const DK=["r","d","v","a","c","e"];
 const DL={r:"Rapport",d:"Discovery",v:"Value",a:"Advancement",c:"Control",e:"Engagement"};
 const DW={r:"10%",d:"30%",v:"15%",a:"20%",c:"10%",e:"15%"};
 const calls=[
+];
+const coaching={
+sam:{narrative:"",keep:"",start:"",stop:"",frameworkCoaching:""},
+kyle:{narrative:"",keep:"",start:"",stop:"",frameworkCoaching:""},
+charlie:{narrative:"",keep:"",start:"",stop:"",frameworkCoaching:""},
+spencer:{narrative:"",keep:"",start:"",stop:"",frameworkCoaching:""}
+};
+/* ARCHIVED — previous live data moved to weeklyHistory by Sunday lock
 {id:1,rep:"sam",title:"Thompson Kane Demo",prospect:"John (Owner), Austin (Ops)",date:"Fri 3/20",dur:"61m",type:"Full Demo",stage:"Evaluation",s:{r:8,d:6,v:7,a:8,c:7,e:8},w:7.15,tr:46,m:{M:1,E:0,DC:0,DP:0,IP:1,Ch:0,Co:0},str:["John articulated 30-50% capacity lift without prompting","Austin validated front-end efficiency for processors","Tuesday ROI review and follow-up booked on-call"],opp:["Probe Economic Buyer and decision process before pricing","Reduce SE talk dominance — AE must own the room"],q:"If our capacity goes up 30 to 50 percent with this, I mean, we could grow a lot without hiring more people.",coach:"John volunteering a 30-50% capacity argument before the pricing conversation even started is the highest-quality buying signal a rep can receive. That is Gap Selling executing at its best — the prospect articulating the future state value in their own language. The groundwork that got John to that moment was real.<br><br>The strategic gap is what happened after John said it. That sentence deserved an immediate response: 'John, if we achieve that lift — what does that actually mean in dollar terms for Thompson Kane this year?' One question. It turns a powerful moment into a quantified business case that John now owns and will carry into the contract conversation. Without quantification, that moment evaporates.<br><br>Austin's engagement was a strong signal that was also underutilized. Austin was asking about rental property workflows, Encompass integration, and front-end efficiency gains — he is a potential internal champion. After the call, a direct outreach to Austin: 'Austin, you had great questions about the Encompass workflows — would a 20-minute focused session be useful for your team?' creates a second thread into the account.<br><br>On MEDDPICC: the Economic Buyer and Decision Process remain unidentified on a call that reached pricing. John 'letting Austin in' mid-call suggests John is the decision-maker, but that assumption needs to be validated. 'John, when you decide to move forward on a tool like this, who else is typically part of that conversation?' is a natural close question that unlocks the path to signature.",prep:["Ask John to quantify the capacity lift in dollar terms — what does 30-50% mean for their annual volume?","Reach out to Austin directly for a focused Encompass workflow deep-dive","Ask about the decision process: who else is involved when Thompson Kane commits to a technology partner?","Probe competitive landscape before Tuesday: 'Are you evaluating any other tools alongside us?'","Build a preliminary ROI model using their team size and estimated file volume before the Tuesday meeting"],url:"https://us-29990.app.gong.io/call?id=4567477048525966914"},
 {id:2,rep:"sam",title:"HMA Pricing",prospect:"Amy, Andrew (HMA)",date:"Mon 3/16",dur:"31m",type:"Pricing",stage:"Late Eval",s:{r:8,d:7,v:8,a:8,c:7,e:7},w:7.45,tr:75,m:{M:1,E:0,DC:1,DP:1,IP:0,Ch:1,Co:0},str:["ROI calculator ready — walked through per-processor/UW economics","Offered success-based pricing structure for flexibility","Monday follow-up with product head Becca booked on-call"],opp:["75% rep talk ratio too high even for pricing call","Partner approval path not mapped before close"],q:"When you get done hobnobbing down there in vegas, let me know, let's get back on the phone and walk through that.",coach:"Arriving at a pricing call from ICE with an ROI calculator and a success-based pricing alternative is exactly the preparation this stage demands. Andrew's positive reaction ('that's great flexibility, thanks') confirms the flexibility framing landed. Monday 10am with Becca and the HMA team is a strong, specific next step.<br><br>The critical data point: 75% rep talk ratio on a pricing call. This is a structural tell. At the pricing stage, the prospect should be doing the math out loud — not listening. When Sam asked 'how does this compare to what you had in mind?' that was the right instinct, but it came once and briefly. That question, asked three or four times throughout the ROI walkthrough, creates the conversation that builds internal commitment.<br><br>The partner approval element was mentioned but not mapped. Amy referenced partners needing to weigh in, and Sam moved past it. The Voss play here is an accusation audit: 'You're probably thinking the partner approval process is going to slow this down.' Saying the scary thing out loud forces Amy to either confirm (and then you can help remove the obstacle) or disconfirm (and now you know the path is clear). Either answer is more valuable than not asking.<br><br>For MEDDPICC: Metrics (ROI calc) and Decision Process (partner approval) are touched. The Economic Buyer remains unidentified — who at HMA actually signs?",prep:["Ask: who at HMA approves a contract of this size — is it Amy, Andrew, or someone above them?","Run an accusation audit on the partner approval: address it proactively on Monday","Prepare ROI scenarios in 3 tiers (conservative, mid, optimistic) for the Becca call","Confirm March end-of-month pricing deadline creates urgency for HMA","Map competitive alternatives: 'What else has your team looked at?'"],url:"https://us-29990.app.gong.io/call?id=9085529724274902861"},
 {id:3,rep:"sam",title:"Superior Natl Bank POV",prospect:"Denise, Nicole",date:"Wed 3/19",dur:"31m",type:"POV Check-in",stage:"Testing",s:{r:5,d:5,v:6,a:6,c:4,e:7},w:5.55,tr:3,m:{M:0,E:0,DC:0,DP:1,IP:1,Ch:1,Co:0},str:["Denise and Nicole highly engaged with SE Steph throughout","Tomorrow's meeting prep identified as key priority","Product accuracy validated by the team"],opp:["AE arrived late and contributed 42 words in 31 minutes","SE carried the entire call — AE-prospect relationship at risk"],q:"I really can't say enough about how pleasant of an experience this has been even through some hiccups.",coach:"This was Steph's call, not Sam's. The 42-word contribution on a 31-minute call is the single largest coaching issue this week. Denise thanked Steph by name for answering their questions. Sam apologized for tardiness. That is the signature on the call — and it is the wrong signature.<br><br>The risk is structural, not cosmetic. When the SE owns the relationship, the AE loses leverage at the table when it matters most: pricing, timeline pressure, and closing. Denise and Nicole are preparing for tomorrow's group meeting. If Sam had been present for this call, there was an opportunity to ask: 'Denise, when you present this to the group tomorrow — what questions do you think they'll raise? Let me help you prepare.' That question turns a POV check-in into a coaching session that cements the AE as the deal owner.<br><br>The product is clearly working — Denise praised the accuracy and the team's responsiveness. That goodwill exists despite Sam's absence. The question is how much longer it will before Denise starts wondering why she doesn't hear more from the AE on a deal this far along.",prep:["Send Denise and Nicole a personal follow-up today — own the relationship, not just the deal","Ask Denise: 'What questions do you expect from the group tomorrow? Let me help you prepare answers'","Schedule a 30-minute readout call for after tomorrow's meeting — be the first call they make","Map the Economic Buyer: who in the group meeting approves the contract?","Establish a direct Slack or text relationship with Nicole as the internal champion"],url:"https://us-29990.app.gong.io/call?id=731956092145352767"},
@@ -135,6 +143,7 @@ stop:"<strong>83.5% rep talk ratio on a proposal call.</strong> This is the week
 frameworkCoaching:"The Patriot arc is strong. LoanBeam surfaced Monday, proposal reviewed Tuesday, owners meeting Monday March 23 — that is deal velocity. <strong>Spencer is creating urgency better than anyone on the team this week</strong>. The month-end incentive is deployed with discipline, the competitive displacement framing (LoanBeam, Kenzie Mae) is in the proposal, and the ownership group pathway is mapped.<br><br>The 83.5% talk ratio is the one behavioral pattern that will slow all of this down at scale. Challenger Sale's 'take control' phase is not about talking more — it is about asking the question that forces commitment. 'Matt, based on everything we've discussed — what is your biggest concern about bringing this to the owners meeting?' That question surfaces every remaining objection before the Monday meeting, and it does it in 10 seconds. Instead, Spencer spent 31 minutes presenting while Matt listened.<br><br>From Voss: when Matt says 'I think it's going to be a great tool to be honest' — that is a 'that's right' moment. The label that follows: 'It sounds like you're confident this is the right tool — what would make the ownership group feel the same way?' Now Matt is selling to his team, not just listening to Spencer. <strong>The rep who creates this dynamic wins the deal at the owners meeting without being in the room.</strong>"
 }
 };
+END ARCHIVED DATA */
 
 // Weekly history — each entry is a full snapshot (reps, calls, coaching) for a locked week.
 // Sunday automation archives the current week here and clears the live dashboard.
@@ -184,7 +193,7 @@ spencer:{narrative:"Two calls on the same account, two different execution level
 }
 ];
 // Current week label — updated by automation
-const currentWeekLabel="Mar 23–27, 2026";
+const currentWeekLabel="Mar 30 – Apr 3, 2026";
 
 let st={rep:"sam",sel:null,view:"overview",historyWeek:null,expandedWeek:null};
 function sc(s){return s>=8.5?"#10b981":s>=7.5?"#3b82f6":"#f59e0b"}
@@ -239,9 +248,9 @@ h+=`</div>`;
 const emptyWeek=aCalls.length===0&&!st.historyWeek&&st.view!=="history";
 if(emptyWeek){
 h+=`<div class="card" style="text-align:center;padding:40px 20px">`;
-h+=`<div style="font-size:48px;margin-bottom:12px;opacity:0.3">📞</div>`;
-h+=`<div style="font-size:16px;font-weight:600;color:#64748b;margin-bottom:6px">No calls scored yet this week</div>`;
-h+=`<div style="font-size:12px;color:#475569;line-height:1.6">Calls are pulled and scored automatically Mon–Fri at 5am ET.<br>Check the <span style="color:#3b82f6;cursor:pointer" onclick="st.view='history';render()">history tab</span> for previous weeks.</div>`;
+h+=`<div style="font-size:48px;margin-bottom:12px">☕</div>`;
+h+=`<div style="font-size:16px;font-weight:600;color:#64748b;margin-bottom:6px">Fresh week, fresh start</div>`;
+h+=`<div style="font-size:12px;color:#475569;line-height:1.6">The scoreboard resets every Monday. New calls get pulled and scored automatically at 5am ET.<br>Grab your coffee — scores will start rolling in shortly.<br>In the meantime, check the <span style="color:#3b82f6;cursor:pointer" onclick="st.view='history';render()">history tab</span> to revisit last week.</div>`;
 h+=`</div>`;
 }
 if(!emptyWeek&&st.view!=="history"){
@@ -323,6 +332,17 @@ const allWeeks=[...weeklyHistory,{weekOf:"current",weekLabel:currentWeekLabel,re
 
 // 1. Coaching history per selected rep (top — changes per rep)
 h+=`<div class="card"><div class="mono" style="font-size:10px;font-weight:600;color:#93c5fd;margin-bottom:10px;letter-spacing:1px">COACHING HISTORY — ${rd.name}</div>`;
+// Current week coaching
+const curCo=coaching[st.rep];
+if(curCo&&curCo.keep){
+h+=`<div class="history-week" style="border-left-color:#3b82f6;background:rgba(59,130,246,0.04)"><div class="mono" style="font-size:10px;color:#64748b;margin-bottom:6px">Week of ${currentWeekLabel} <span class="tag" style="background:rgba(59,130,246,0.15);color:#3b82f6;margin-left:6px">CURRENT</span></div>`;
+h+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px">`;
+h+=`<div><div style="font-size:9px;font-weight:600;color:#10b981;margin-bottom:2px">KEEP</div><div style="font-size:10px;color:#94a3b8;line-height:1.4">${curCo.keep}</div></div>`;
+h+=`<div><div style="font-size:9px;font-weight:600;color:#f59e0b;margin-bottom:2px">START</div><div style="font-size:10px;color:#94a3b8;line-height:1.4">${curCo.start}</div></div>`;
+h+=`<div><div style="font-size:9px;font-weight:600;color:#ef4444;margin-bottom:2px">STOP</div><div style="font-size:10px;color:#94a3b8;line-height:1.4">${curCo.stop}</div></div>`;
+h+=`</div></div>`;
+}
+// Archived weeks coaching
 weeklyHistory.slice().reverse().forEach(w=>{
 const wco=w.coaching[st.rep];
 if(!wco)return;
