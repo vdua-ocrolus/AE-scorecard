@@ -353,18 +353,24 @@ function sendSlack(message) {
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
+function toET(date) {
+  // Format as ISO 8601 with ET offset (Gong requires timezone offset, not Z)
+  const est = new Date(date.getTime() - 5 * 60 * 60 * 1000); // UTC-5 (EST)
+  const iso = est.toISOString().replace("Z", "-05:00");
+  return iso;
+}
+
 function getWeekRange() {
-  // Current time in ET (approximate — GitHub Actions runs in UTC)
   const now = new Date();
   const day = now.getUTCDay();
   const monday = new Date(now);
   // Go back to Monday
   monday.setUTCDate(monday.getUTCDate() - (day === 0 ? 6 : day - 1));
-  monday.setUTCHours(5, 0, 0, 0); // 5am UTC = ~midnight ET
+  monday.setUTCHours(5, 0, 0, 0); // 5am UTC = midnight ET
 
   return {
-    from: monday.toISOString(),
-    to: now.toISOString(),
+    from: toET(monday),
+    to: toET(now),
   };
 }
 
