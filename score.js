@@ -140,21 +140,92 @@ function gongRequest(path, body) {
 }
 
 async function getCalls(fromDate, toDate) {
-  const body = {
-    filter: {
-      fromDateTime: fromDate,
-      toDateTime: toDate,
-      workspaceId: WORKSPACE_ID,
-    },
-    cursor: "",
-  };
-  console.log("   Gong request body:", JSON.stringify(body));
-  const result = await gongRequest("/calls", body);
+  // Use /calls as a GET request with query params
+  const auth = Buffer.from(
+    `${process.env.GONG_ACCESS_KEY}:${process.env.GONG_ACCESS_KEY_SECRET}`
+  ).toString("base64");
+
+  const params = new URLSearchParams({
+    fromDateTime: fromDate,
+    toDateTime: toDate,
+    workspaceId: WORKSPACE_ID,
+  });
+
+  const url = `/v2/calls?${params.toString()}`;
+  console.log("   Gong GET:", url);
+
+  const result = await new Promise((resolve, reject) => {
+    const req = https.request(
+      {
+        hostname: "us-29990.api.gong.io",
+        path: url,
+        method: "GET",
+        headers: {
+          Authorization: `Basic ${auth}`,
+        },
+      },
+      (res) => {
+        let body = "";
+        res.on("data", (chunk) => (body += chunk));
+        res.on("end", () => {
+          try {
+            resolve(JSON.parse(body));
+          } catch (e) {
+            reject(new Error(`Gong API parse error: ${body.slice(0, 500)}`));
+          }
+        });
+      }
+    );
+    req.on("error", reject);
+    req.end();
+  });
+
   console.log("   Gong response keys:", Object.keys(result));
   console.log("   Gong totalRecords:", result.records?.totalRecords);
   if (result.errors) console.log("   Gong errors:", JSON.stringify(result.errors));
   if (!result.calls) console.log("   Gong raw response (first 500):", JSON.stringify(result).slice(0, 500));
-  return result.calls || [];
+
+  // Paginate if needed
+  let allCalls = result.calls || [];
+  let cursor = result.records?.cursor;
+  while (cursor) {
+    console.log(`   Fetching next page (${allCalls.length} calls so far)...`);
+    const nextParams = new URLSearchParams({
+      fromDateTime: fromDate,
+      toDateTime: toDate,
+      workspaceId: WORKSPACE_ID,
+      cursor,
+    });
+    const nextResult = await new Promise((resolve, reject) => {
+      const req = https.request(
+        {
+          hostname: "us-29990.api.gong.io",
+          path: `/v2/calls?${nextParams.toString()}`,
+          method: "GET",
+          headers: {
+            Authorization: `Basic ${auth}`,
+          },
+        },
+        (res) => {
+          let body = "";
+          res.on("data", (chunk) => (body += chunk));
+          res.on("end", () => {
+            try {
+              resolve(JSON.parse(body));
+            } catch (e) {
+              reject(new Error(`Gong API parse error: ${body.slice(0, 500)}`));
+            }
+          });
+        }
+      );
+      req.on("error", reject);
+      req.end();
+    });
+    allCalls = allCalls.concat(nextResult.calls || []);
+    cursor = nextResult.records?.cursor;
+  }
+
+  return allCalls;
 }
 
 async function getTranscript(callId) {
