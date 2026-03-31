@@ -140,14 +140,20 @@ function gongRequest(path, body) {
 }
 
 async function getCalls(fromDate, toDate) {
-  const result = await gongRequest("/calls", {
+  const body = {
     filter: {
       fromDateTime: fromDate,
       toDateTime: toDate,
       workspaceId: WORKSPACE_ID,
     },
     cursor: "",
-  });
+  };
+  console.log("   Gong request body:", JSON.stringify(body));
+  const result = await gongRequest("/calls", body);
+  console.log("   Gong response keys:", Object.keys(result));
+  console.log("   Gong totalRecords:", result.records?.totalRecords);
+  if (result.errors) console.log("   Gong errors:", JSON.stringify(result.errors));
+  if (!result.calls) console.log("   Gong raw response (first 500):", JSON.stringify(result).slice(0, 500));
   return result.calls || [];
 }
 
