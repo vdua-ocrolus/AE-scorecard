@@ -245,9 +245,31 @@ async function getTranscript(callId) {
   return result.callTranscripts?.[0] || null;
 }
 
+async function getCallParties(callId) {
+  // Fetch detailed call data including party info (names, emails, affiliation)
+  const result = await gongRequest("/calls/extensive", {
+    filter: { callIds: [callId] },
+    contentSelector: { exposedFields: { parties: true } },
+  });
+  const call = result.calls?.[0];
+  if (!call?.parties) return null;
+  // Build speakerId → { name, affiliation, email } map
+  const partyMap = {};
+  for (const p of call.parties) {
+    if (p.speakerId) {
+      partyMap[p.speakerId] = {
+        name: p.name || "Unknown",
+        affiliation: p.affiliation || "unknown", // "internal" or "external"
+        email: p.emailAddress || "",
+      };
+    }
+  }
+  return partyMap;
+}
+
 // ─── Transcript Processing ──────────────────────────────────────────────────
 
-function processTranscript(transcript) {
+function processTranscript(transcript, partyMap) {
   if (!transcript?.transcript) return null;
 
   const speakers = {};
@@ -264,64 +286,79 @@ function processTranscript(transcript) {
     }
   }
 
-  // Detect and strip pre-call internal chatter
-  // Pattern: only 2 speakers talking, then a 3rd speaker joins (the prospect)
-  // Look for the point where a new speaker enters after initial 2-speaker conversation
-  let callStartIdx = 0;
-  if (fullText.length > 10) {
-    const earlySpeakers = new Set();
-    for (let i = 0; i < fullText.length; i++) {
-      earlySpeakers.add(fullText[i].speaker);
-      if (earlySpeakers.size === 3) {
-        // 3rd speaker just appeared — check if there was substantial 2-speaker chat before this
-        if (i > 15) {
-          // More than 15 sentences of 2-speaker chat = likely pre-call banter
-          callStartIdx = Math.max(0, i - 3); // start a few sentences before 3rd speaker for context
-          console.log(`   ⏩ Detected pre-call internal chatter (${i} sentences). Scoring from sentence ${callStartIdx}.`);
-        }
-        break;
-      }
+  // Build speaker labels from Gong party data
+  const speakerLabels = {};
+  const internalIds = new Set();
+  const externalIds = new Set();
+  if (partyMap) {
+    for (const [spkId, info] of Object.entries(partyMap)) {
+      const isInternal = info.affiliation === "internal" ||
+        (info.email && info.email.endsWith("@ocrolus.com"));
+      speakerLabels[spkId] = `${info.name} (${isInternal ? "INTERNAL" : "EXTERNAL"})`;
+      if (isInternal) internalIds.add(spkId);
+      else externalIds.add(spkId);
     }
+    console.log(`   👥 Speakers: ${Object.values(speakerLabels).join(", ")}`);
   }
 
-  // Rebuild speakers and fullText from callStartIdx onwards (prospect-only portion)
-  const prospectText = fullText.slice(callStartIdx);
-  const prospectSpeakers = {};
-  for (const entry of prospectText) {
-    if (!prospectSpeakers[entry.speaker]) prospectSpeakers[entry.speaker] = { words: 0, sentences: [] };
-    prospectSpeakers[entry.speaker].words += entry.text.split(/\s+/).length;
-    prospectSpeakers[entry.speaker].sentences.push(entry.text);
-  }
+  // Filter: only include sentences where at least one external speaker is present on the call
+  // Mark internal-only segments so the scorer can see who's talking
+  const labeledText = fullText.map((s) => {
+    const label = speakerLabels[s.speaker] || `Speaker ${s.speaker}`;
+    return { ...s, label };
+  });
 
-  const sorted = Object.entries(prospectSpeakers).sort((a, b) => b[1].words - a[1].words);
+  const sorted = Object.entries(speakers).sort((a, b) => b[1].words - a[1].words);
   const totalWords = sorted.reduce((a, [, v]) => a + v.words, 0);
 
-  const totalSentences = prospectText.length;
-  const opening = prospectText.slice(0, Math.min(30, totalSentences)).map((s) => s.text).join(" ");
+  const totalSentences = fullText.length;
+  // Include speaker labels in the text excerpts so scorer knows who's internal vs external
+  const formatExcerpt = (entries) => entries.map((s) => {
+    const label = speakerLabels[s.speaker] || `Speaker ${s.speaker}`;
+    return `[${label}]: ${s.text}`;
+  }).join("\n");
+
+  const opening = formatExcerpt(fullText.slice(0, Math.min(30, totalSentences)));
   const middleStart = Math.floor(totalSentences * 0.3);
   const middleEnd = Math.floor(totalSentences * 0.6);
-  const middle = prospectText.slice(middleStart, middleEnd).map((s) => s.text).join(" ");
-  const closing = prospectText.slice(-Math.min(30, totalSentences)).map((s) => s.text).join(" ");
+  const middle = formatExcerpt(fullText.slice(middleStart, middleEnd));
+  const closing = formatExcerpt(fullText.slice(-Math.min(30, totalSentences)));
 
-  const questions = prospectText
+  const questions = fullText
     .filter((s) => s.text.includes("?"))
     .slice(0, 15)
-    .map((s) => s.text);
+    .map((s) => {
+      const label = speakerLabels[s.speaker] || `Speaker ${s.speaker}`;
+      return `[${label}]: ${s.text}`;
+    });
+
+  // Build speaker summary for context
+  const speakerSummary = Object.entries(speakerLabels).length > 0
+    ? Object.entries(speakerLabels).map(([id, label]) => {
+        const w = speakers[id]?.words || 0;
+        return `${label}: ${w} words (${Math.round((w / totalWords) * 100)}%)`;
+      }).join("; ")
+    : null;
 
   return {
     speakerCount: sorted.length,
     topSpeakerRatio: Math.round((sorted[0]?.[1].words / totalWords) * 100),
     totalWords,
-    opening: opening.slice(0, 1500),
-    middle: middle.slice(0, 2000),
-    closing: closing.slice(0, 1500),
+    opening: opening.slice(0, 2000),
+    middle: middle.slice(0, 2500),
+    closing: closing.slice(0, 2000),
     questions,
+    speakerSummary,
   };
 }
 
 // ─── Claude API ─────────────────────────────────────────────────────────────
 
 async function scoreCall(client, callInfo, processedTranscript) {
+  const speakerInfo = processedTranscript.speakerSummary
+    ? `\n- Speaker Breakdown: ${processedTranscript.speakerSummary}\n\nIMPORTANT: Speakers labeled INTERNAL are Ocrolus employees. Speakers labeled EXTERNAL are prospects/clients. ONLY score the rep's interactions with EXTERNAL speakers. Internal-only conversations (e.g., two INTERNAL speakers chatting before the client joins) should be completely ignored for scoring purposes.`
+    : "";
+
   const prompt = `${SCORING_PROMPT}
 
 Call Info:
@@ -329,7 +366,7 @@ Call Info:
 - Duration: ${Math.round(callInfo.duration / 60)} minutes
 - Type: ${callInfo.direction}
 - Speakers: ${processedTranscript.speakerCount}
-- Top speaker talk ratio: ${processedTranscript.topSpeakerRatio}%
+- Top speaker talk ratio: ${processedTranscript.topSpeakerRatio}%${speakerInfo}
 
 Transcript Summary:
 OPENING: ${processedTranscript.opening}
@@ -552,13 +589,16 @@ async function main() {
 
       console.log(`   📝 Scoring: ${call.title} (${Math.round(call.duration / 60)}m)`);
 
-      const transcript = await getTranscript(call.id);
+      const [transcript, partyMap] = await Promise.all([
+        getTranscript(call.id),
+        getCallParties(call.id),
+      ]);
       if (!transcript) {
         console.log(`      ⚠️ No transcript, skipping`);
         continue;
       }
 
-      const processed = processTranscript(transcript);
+      const processed = processTranscript(transcript, partyMap);
       if (!processed) {
         console.log(`      ⚠️ Processing failed, skipping`);
         continue;
