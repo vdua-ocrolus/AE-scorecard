@@ -1,5 +1,35 @@
 # AE Scorer — Version Changelog
 
+## v10.1 (2026-04-01)
+**File**: `AE-Scorer_v10.1.skill`
+
+### New: Cloud Automation via GitHub Actions
+- Daily scoring runs Mon–Fri at 5am ET — fully automated, no manual trigger needed
+- Sunday lock job archives the week and clears the dashboard automatically
+- Slack notifications sent after each run with scoring summary
+- `score.js` and `lock.js` handle the full pipeline: Gong → transcript → score → coaching → dashboard update → git push
+
+### New: Google SSO Auth Gate
+- Dashboard secured behind Google OAuth — only @ocrolus.com accounts can access
+- Session cached in localStorage until token expires
+- User bar shows avatar, name, and Sign Out button
+- Access logging to Google Sheet (login, return visit, sign out)
+
+### Improved: Scoring Prompt — Ignore Pre-Call Chatter
+- Scorer now explicitly ignores internal side conversations, waiting-room banter, and colleague chat before the client joins
+- Only rep↔prospect interactions are evaluated
+
+### Improved: Coaching Tone & Conciseness
+- Shifted from critical evaluator to supportive coach tone
+- Feedback limited to top 1-3 actionable points per call
+- Framed as opportunities ("consider", "try") not failures ("failed to", "missed")
+- Weekly coaching summaries also updated with same tone guidelines
+
+### Fixed: History Drill-In Shows All Calls
+- Archived weeks now show all calls grouped by rep, not just the selected rep's calls
+
+---
+
 ## v10 (2026-03-30)
 **File**: `AE-Scorer_v10.skill`
 
