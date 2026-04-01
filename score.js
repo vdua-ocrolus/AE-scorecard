@@ -264,17 +264,46 @@ function processTranscript(transcript) {
     }
   }
 
-  const sorted = Object.entries(speakers).sort((a, b) => b[1].words - a[1].words);
+  // Detect and strip pre-call internal chatter
+  // Pattern: only 2 speakers talking, then a 3rd speaker joins (the prospect)
+  // Look for the point where a new speaker enters after initial 2-speaker conversation
+  let callStartIdx = 0;
+  if (fullText.length > 10) {
+    const earlySpeakers = new Set();
+    for (let i = 0; i < fullText.length; i++) {
+      earlySpeakers.add(fullText[i].speaker);
+      if (earlySpeakers.size === 3) {
+        // 3rd speaker just appeared — check if there was substantial 2-speaker chat before this
+        if (i > 15) {
+          // More than 15 sentences of 2-speaker chat = likely pre-call banter
+          callStartIdx = Math.max(0, i - 3); // start a few sentences before 3rd speaker for context
+          console.log(`   ⏩ Detected pre-call internal chatter (${i} sentences). Scoring from sentence ${callStartIdx}.`);
+        }
+        break;
+      }
+    }
+  }
+
+  // Rebuild speakers and fullText from callStartIdx onwards (prospect-only portion)
+  const prospectText = fullText.slice(callStartIdx);
+  const prospectSpeakers = {};
+  for (const entry of prospectText) {
+    if (!prospectSpeakers[entry.speaker]) prospectSpeakers[entry.speaker] = { words: 0, sentences: [] };
+    prospectSpeakers[entry.speaker].words += entry.text.split(/\s+/).length;
+    prospectSpeakers[entry.speaker].sentences.push(entry.text);
+  }
+
+  const sorted = Object.entries(prospectSpeakers).sort((a, b) => b[1].words - a[1].words);
   const totalWords = sorted.reduce((a, [, v]) => a + v.words, 0);
 
-  const totalSentences = fullText.length;
-  const opening = fullText.slice(0, Math.min(30, totalSentences)).map((s) => s.text).join(" ");
+  const totalSentences = prospectText.length;
+  const opening = prospectText.slice(0, Math.min(30, totalSentences)).map((s) => s.text).join(" ");
   const middleStart = Math.floor(totalSentences * 0.3);
   const middleEnd = Math.floor(totalSentences * 0.6);
-  const middle = fullText.slice(middleStart, middleEnd).map((s) => s.text).join(" ");
-  const closing = fullText.slice(-Math.min(30, totalSentences)).map((s) => s.text).join(" ");
+  const middle = prospectText.slice(middleStart, middleEnd).map((s) => s.text).join(" ");
+  const closing = prospectText.slice(-Math.min(30, totalSentences)).map((s) => s.text).join(" ");
 
-  const questions = fullText
+  const questions = prospectText
     .filter((s) => s.text.includes("?"))
     .slice(0, 15)
     .map((s) => s.text);
