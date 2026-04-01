@@ -54,7 +54,7 @@ Also evaluate MEDDPICC coverage (M, E, DC, DP, IP, Ch, Co - 1 for covered, 0 for
 MEDDPICC is a multi-call framework, not a single-call checklist. Score depth on 2-4 elements, not surface coverage of all 7.
 
 CRITICAL RULES:
-- IGNORE all pre-call chatter, internal side conversations, and waiting-room banter between colleagues. Only evaluate the rep's interactions with the PROSPECT/CLIENT. If the transcript starts with internal discussion before the client joins, skip that entirely.
+- IGNORE all pre-call chatter, internal side conversations, and waiting-room banter between colleagues. Only evaluate the rep's interactions with the PROSPECT/CLIENT. Signs of pre-call internal chat: casual personal topics (skiing, travel, hotels) between only 2 speakers before a 3rd speaker joins and says something like "hey" or gets introduced. Once the prospect/client joins (often signaled by introductions, "let me introduce", or a new speaker entering), THAT is when the scoreable call begins. Do NOT credit or penalize rapport, small talk, or any behavior from the pre-call portion.
 - Never criticize demo length — long demos are driven by customer engagement
 - Do not penalize AE for SE presence on POV/demo calls — score AE on orchestration
 - Apply epistemic humility — use "the transcript shows" not "the rep felt"
