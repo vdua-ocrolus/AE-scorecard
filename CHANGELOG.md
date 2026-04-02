@@ -15,9 +15,12 @@
 - User bar shows avatar, name, and Sign Out button
 - Access logging to Google Sheet (login, return visit, sign out)
 
-### Improved: Scoring Prompt — Ignore Pre-Call Chatter
-- Scorer now explicitly ignores internal side conversations, waiting-room banter, and colleague chat before the client joins
-- Only rep↔prospect interactions are evaluated
+### Improved: Speaker-Aware Scoring (Internal vs External)
+- Fetches Gong party data for each call to identify speakers as INTERNAL (Ocrolus) or EXTERNAL (prospect/client)
+- Every transcript excerpt sent to the scorer is labeled with speaker name and affiliation
+- Scorer explicitly instructed to only evaluate rep↔EXTERNAL interactions
+- Internal-only conversations (pre-call banter, sidebar discussions) are ignored for scoring
+- Replaces blunt heuristics with proper speaker identification from Gong metadata
 
 ### Improved: Coaching Tone & Conciseness
 - Shifted from critical evaluator to supportive coach tone
