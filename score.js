@@ -32,6 +32,14 @@ const REPS = [
 
 const WORKSPACE_ID = "509723422617923879";
 const MIN_DURATION = 600;
+
+// Known Ocrolus employees — force INTERNAL even if Gong marks them external
+const INTERNAL_NAMES = new Set([
+  "vik dua", "vikas dua", "vikdua",
+  "andrew rains", "andrew barnes", "matt bronen", "adam hanson",
+  "david gipson", "rebecca seward", "stef mcnabb", "stephanie mcnabb",
+  "amanda burgos", "puru kalia", "anthony macko",
+]);
 const DATA_START = "// @@DATA_START@@";
 const DATA_END = "// @@DATA_END@@";
 
@@ -257,10 +265,16 @@ async function getCallParties(callId) {
   const partyMap = {};
   for (const p of call.parties) {
     if (p.speakerId) {
+      const name = p.name || "Unknown";
+      const email = p.emailAddress || "";
+      // Determine if internal: Gong affiliation, @ocrolus.com email, or known employee name
+      const isInternal = p.affiliation === "internal" ||
+        email.endsWith("@ocrolus.com") ||
+        INTERNAL_NAMES.has(name.toLowerCase().trim());
       partyMap[p.speakerId] = {
-        name: p.name || "Unknown",
-        affiliation: p.affiliation || "unknown", // "internal" or "external"
-        email: p.emailAddress || "",
+        name,
+        affiliation: isInternal ? "internal" : (p.affiliation || "unknown"),
+        email,
       };
     }
   }
