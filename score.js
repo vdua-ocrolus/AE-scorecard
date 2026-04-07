@@ -593,9 +593,19 @@ async function main() {
         c.duration >= MIN_DURATION
     );
 
-    console.log(`\n👤 ${rep.name}: ${repGongCalls.length} qualifying calls`);
+    // Filter out non-sales calls (implementation, kickoff, onboarding, training, support)
+    const NON_SALES_PATTERNS = /\b(implementation|kickoff|kick-off|kick off|onboarding|on-boarding|training|go.?live|integration call|support call|check.?in call|status update)\b/i;
+    const salesCalls = repGongCalls.filter((c) => {
+      if (NON_SALES_PATTERNS.test(c.title)) {
+        console.log(`   ⏭️  Non-sales call, skipping: ${c.title}`);
+        return false;
+      }
+      return true;
+    });
 
-    for (const call of repGongCalls) {
+    console.log(`\n👤 ${rep.name}: ${salesCalls.length} qualifying sales calls (${repGongCalls.length - salesCalls.length} non-sales skipped)`);
+
+    for (const call of salesCalls) {
       if (cachedUrls.has(call.url)) {
         console.log(`   ⏭️  Cached: ${call.title}`);
         continue;
