@@ -138,9 +138,10 @@ async function sendSlack(message) {
     promises.push(postToWebhook(process.env.SLACK_WEBHOOK_URL, message));
   }
 
-  // Bot token DMs for Andrew Rains and John Lowenthal
+  // Bot token DMs for Vik, Andrew Rains, and John Lowenthal
   const botToken = process.env.SLACK_BOT_TOKEN;
   if (botToken) {
+    promises.push(postSlackDM(botToken, "U7K3SBGFR", message));   // Vik Dua
     promises.push(postSlackDM(botToken, "U045N7073UM", message)); // Andrew Rains
     promises.push(postSlackDM(botToken, "UE6HYHFJ8", message));   // John Lowenthal
   }
