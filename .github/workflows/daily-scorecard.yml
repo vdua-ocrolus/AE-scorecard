@@ -30,6 +30,8 @@ jobs:
           GONG_ACCESS_KEY_SECRET: ${{ secrets.GONG_ACCESS_KEY_SECRET }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL_ANDREW: ${{ secrets.SLACK_WEBHOOK_URL_ANDREW }}
+          SLACK_WEBHOOK_URL_JOHN: ${{ secrets.SLACK_WEBHOOK_URL_JOHN }}
         run: node score.js
 
       - name: Commit and push updated dashboard

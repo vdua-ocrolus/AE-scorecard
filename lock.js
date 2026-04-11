@@ -61,12 +61,7 @@ const currentWeekLabel=${JSON.stringify(data.currentWeekLabel)};
 
 // ─── Slack ──────────────────────────────────────────────────────────────────
 
-function sendSlack(message) {
-  const webhookUrl = process.env.SLACK_WEBHOOK_URL;
-  if (!webhookUrl) {
-    console.log("⚠️ No SLACK_WEBHOOK_URL set, skipping Slack");
-    return Promise.resolve();
-  }
+function postToWebhook(webhookUrl, message) {
   const url = new URL(webhookUrl);
   return new Promise((resolve, reject) => {
     const data = JSON.stringify({ text: message });
@@ -86,10 +81,26 @@ function sendSlack(message) {
         res.on("end", () => resolve(body));
       }
     );
-    req.on("error", reject);
+    req.on("error", (e) => { console.error(`Webhook error: ${e.message}`); resolve("error"); });
     req.write(data);
     req.end();
   });
+}
+
+async function sendSlack(message) {
+  const urls = [
+    process.env.SLACK_WEBHOOK_URL,
+    process.env.SLACK_WEBHOOK_URL_ANDREW,
+    process.env.SLACK_WEBHOOK_URL_JOHN,
+  ].filter(Boolean);
+
+  if (urls.length === 0) {
+    console.log("⚠️ No SLACK_WEBHOOK_URLs set, skipping Slack");
+    return;
+  }
+
+  console.log(`   📨 Sending Slack to ${urls.length} recipient(s)...`);
+  await Promise.all(urls.map((u) => postToWebhook(u, message)));
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
