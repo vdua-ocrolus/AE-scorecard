@@ -24,8 +24,7 @@ jobs:
       - name: Run Sunday lock
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_URL_ANDREW: ${{ secrets.SLACK_WEBHOOK_URL_ANDREW }}
-          SLACK_WEBHOOK_URL_JOHN: ${{ secrets.SLACK_WEBHOOK_URL_JOHN }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         run: node lock.js
 
       - name: Commit and push locked dashboard

@@ -513,21 +513,60 @@ function postToWebhook(webhookUrl, message) {
   });
 }
 
-async function sendSlack(message) {
-  // Send to all configured webhook URLs (Vik, Andrew Rains, John Lowenthal)
-  const urls = [
-    process.env.SLACK_WEBHOOK_URL,
-    process.env.SLACK_WEBHOOK_URL_ANDREW,
-    process.env.SLACK_WEBHOOK_URL_JOHN,
-  ].filter(Boolean);
+function postSlackDM(botToken, channel, message) {
+  return new Promise((resolve, reject) => {
+    const data = JSON.stringify({ channel, text: message });
+    const req = https.request(
+      {
+        hostname: "slack.com",
+        path: "/api/chat.postMessage",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Authorization": `Bearer ${botToken}`,
+          "Content-Length": Buffer.byteLength(data),
+        },
+      },
+      (res) => {
+        let body = "";
+        res.on("data", (chunk) => (body += chunk));
+        res.on("end", () => {
+          try {
+            const resp = JSON.parse(body);
+            if (!resp.ok) console.error(`Slack DM error (${channel}): ${resp.error}`);
+          } catch (e) { /* ignore parse errors */ }
+          resolve(body);
+        });
+      }
+    );
+    req.on("error", (e) => { console.error(`Slack DM error: ${e.message}`); resolve("error"); });
+    req.write(data);
+    req.end();
+  });
+}
 
-  if (urls.length === 0) {
-    console.log("⚠️ No SLACK_WEBHOOK_URLs set, skipping Slack");
+async function sendSlack(message) {
+  const promises = [];
+
+  // Webhook for Vik
+  if (process.env.SLACK_WEBHOOK_URL) {
+    promises.push(postToWebhook(process.env.SLACK_WEBHOOK_URL, message));
+  }
+
+  // Bot token DMs for Andrew Rains and John Lowenthal
+  const botToken = process.env.SLACK_BOT_TOKEN;
+  if (botToken) {
+    promises.push(postSlackDM(botToken, "U045N7073UM", message)); // Andrew Rains
+    promises.push(postSlackDM(botToken, "UE6HYHFJ8", message));   // John Lowenthal
+  }
+
+  if (promises.length === 0) {
+    console.log("⚠️ No Slack credentials set, skipping Slack");
     return;
   }
 
-  console.log(`   📨 Sending Slack to ${urls.length} recipient(s)...`);
-  await Promise.all(urls.map((u) => postToWebhook(u, message)));
+  console.log(`   📨 Sending Slack to ${promises.length} recipient(s)...`);
+  await Promise.all(promises);
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
