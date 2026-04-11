@@ -87,13 +87,13 @@ function postToWebhook(webhookUrl, message) {
   });
 }
 
-function postSlackDM(botToken, channel, message) {
-  return new Promise((resolve, reject) => {
-    const data = JSON.stringify({ channel, text: message });
+function slackAPI(botToken, method, payload) {
+  return new Promise((resolve) => {
+    const data = JSON.stringify(payload);
     const req = https.request(
       {
         hostname: "slack.com",
-        path: "/api/chat.postMessage",
+        path: `/api/${method}`,
         method: "POST",
         headers: {
           "Content-Type": "application/json; charset=utf-8",
@@ -105,18 +105,29 @@ function postSlackDM(botToken, channel, message) {
         let body = "";
         res.on("data", (chunk) => (body += chunk));
         res.on("end", () => {
-          try {
-            const resp = JSON.parse(body);
-            if (!resp.ok) console.error(`Slack DM error (${channel}): ${resp.error}`);
-          } catch (e) { /* ignore parse errors */ }
-          resolve(body);
+          try { resolve(JSON.parse(body)); } catch (e) { resolve({ ok: false, error: "parse_error" }); }
         });
       }
     );
-    req.on("error", (e) => { console.error(`Slack DM error: ${e.message}`); resolve("error"); });
+    req.on("error", (e) => { console.error(`Slack API error: ${e.message}`); resolve({ ok: false, error: e.message }); });
     req.write(data);
     req.end();
   });
+}
+
+async function postSlackDM(botToken, userId, message) {
+  const openRes = await slackAPI(botToken, "conversations.open", { users: userId });
+  if (!openRes.ok) {
+    console.error(`   ❌ Slack conversations.open failed for ${userId}: ${openRes.error}`);
+    return;
+  }
+  const dmChannelId = openRes.channel.id;
+  const postRes = await slackAPI(botToken, "chat.postMessage", { channel: dmChannelId, text: message });
+  if (!postRes.ok) {
+    console.error(`   ❌ Slack chat.postMessage failed for ${userId}: ${postRes.error}`);
+  } else {
+    console.log(`   ✅ Slack DM sent to ${userId}`);
+  }
 }
 
 async function sendSlack(message) {
