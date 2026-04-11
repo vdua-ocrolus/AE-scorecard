@@ -2,8 +2,8 @@ name: Daily AE Scorecard
 
 on:
   schedule:
-    # Mon-Fri at 5am ET (10am UTC during EST, 9am UTC during EDT)
-    - cron: '0 10 * * 1-5'
+    # Every day at 5am ET (10am UTC during EST, 9am UTC during EDT)
+    - cron: '0 10 * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:

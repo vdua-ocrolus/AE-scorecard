@@ -176,7 +176,7 @@ if(!emptyWeek&&st.view!=="history"){
 // KPIs
 h+=`<div class="kpi-grid">`;
 h+=`<div class="card kpi"><div class="label mono">Avg Score</div><div style="font-size:24px;font-weight:700;color:${avg!=="—"?sc(parseFloat(avg)):"#475569"}">${avg}</div></div>`;
-h+=`<div class="card kpi"><div class="label mono">Best Call</div><div style="font-size:24px;font-weight:700;color:#3b82f6">${best?best.w:"—"}</div></div>`;
+h+=`<div class="card kpi${best?' clickable':''}" ${best?`onclick="st.sel=${best.id};render()" style="cursor:pointer"`:''}><div class="label mono">Best Call</div><div style="font-size:24px;font-weight:700;color:#3b82f6">${best?best.w:"—"}</div>${best?`<div style="font-size:9px;color:#475569;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${best.title}</div>`:''}</div>`;
 h+=`<div class="card kpi"><div class="label mono">Calls</div><div style="font-size:24px;font-weight:700;color:#8b5cf6">${f.length}</div></div>`;
 h+=`<div class="card kpi"><div class="label mono">Profile</div><div style="font-size:15px;font-weight:700;color:#f59e0b">${rd.profile}</div></div>`;
 h+=`</div>`;
@@ -297,7 +297,8 @@ h+=`<div class="card"><div class="mono" style="font-size:10px;font-weight:600;co
 h+=`<table><thead><tr><th>Week</th>`;
 reps.forEach(r=>{h+=`<th style="text-align:center">${r.name.split(" ")[0]}</th>`});
 h+=`<th style="text-align:center">Team</th></tr></thead><tbody>`;
-allWeeks.forEach((w,wi)=>{
+const trendsReversed=[...allWeeks].reverse();
+trendsReversed.forEach((w,wi)=>{
 const isCurrent=w.weekOf==="current";
 h+=`<tr${isCurrent?' style="background:rgba(59,130,246,0.04)"':''}>`;
 h+=`<td class="mono" style="color:#94a3b8;font-size:10px">${w.weekLabel.split(",")[0]}</td>`;
@@ -311,6 +312,13 @@ const teamAvg=teamN?(teamSum/teamN).toFixed(2):"—";
 h+=`<td style="text-align:center;font-weight:700;color:${typeof teamAvg==='number'?sc(teamAvg):sc(parseFloat(teamAvg))}">${teamAvg}</td>`;
 h+=`</tr>`;
 });
+// Average row across all weeks
+const repAvgs={};reps.forEach(r=>{let s=0,n=0;allWeeks.forEach(w=>{const wr=w.reps.find(wr2=>wr2.id===r.id);if(wr&&wr.avg>0){s+=wr.avg;n++}});repAvgs[r.id]=n?(s/n).toFixed(2):"—"});
+let allTeamSum=0,allTeamN=0;reps.forEach(r=>{if(repAvgs[r.id]!=="—"){allTeamSum+=parseFloat(repAvgs[r.id]);allTeamN++}});
+const allTeamAvg=allTeamN?(allTeamSum/allTeamN).toFixed(2):"—";
+h+=`<tr style="border-top:2px solid #334155;font-weight:700"><td class="mono" style="color:#93c5fd;font-size:10px">AVG</td>`;
+reps.forEach(r=>{const v=repAvgs[r.id];h+=`<td style="text-align:center"><span style="font-weight:700;color:${v!=="—"?sc(parseFloat(v)):'#475569'}">${v}</span></td>`});
+h+=`<td style="text-align:center;font-weight:700;color:${allTeamAvg!=="—"?sc(parseFloat(allTeamAvg)):'#475569'}">${allTeamAvg}</td></tr>`;
 h+=`</tbody></table>`;
 
 // Visual trend bars per rep

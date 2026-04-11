@@ -594,7 +594,7 @@ async function main() {
     );
 
     // Filter out non-sales calls (implementation, kickoff, onboarding, training, support)
-    const NON_SALES_PATTERNS = /\b(implementation|kickoff|kick-off|kick off|onboarding|on-boarding|training|go.?live|integration call|support call|check.?in call|status update)\b/i;
+    const NON_SALES_PATTERNS = /\b(implementation|kickoff|kick-off|kick off|onboarding|on-boarding|training|go.?live|integration call|support call|check.?in call|check.?in|status update|partnership|partner call|lunch)\b/i;
     const salesCalls = repGongCalls.filter((c) => {
       if (NON_SALES_PATTERNS.test(c.title)) {
         console.log(`   ⏭️  Non-sales call, skipping: ${c.title}`);
