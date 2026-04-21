@@ -410,7 +410,16 @@ function getAccountHistory(callTitle, repId, currentCalls, weeklyHistory) {
       if (!week.calls) continue;
       for (const c of week.calls) {
         if (c.rep === repId && c.title && c.title.toLowerCase().includes(accountLower)) {
-          priorCalls.push({ title: c.title, date: c.date, score: c.w, stage: c.stage || c.type });
+          priorCalls.push({
+            title: c.title, date: c.date, score: c.w,
+            stage: c.stage || c.type,
+            meddpicc: c.m || null,
+            coaching: c.coach || null,
+            strengths: c.str || [],
+            opportunities: c.opp || [],
+            prep: c.prep || [],
+            scores: c.s || null,
+          });
         }
       }
     }
@@ -419,7 +428,16 @@ function getAccountHistory(callTitle, repId, currentCalls, weeklyHistory) {
   // Search current week's existing calls
   for (const c of currentCalls) {
     if (c.rep === repId && c.title && c.title.toLowerCase().includes(accountLower)) {
-      priorCalls.push({ title: c.title, date: c.date, score: c.w, stage: c.stage || c.type });
+      priorCalls.push({
+        title: c.title, date: c.date, score: c.w,
+        stage: c.stage || c.type,
+        meddpicc: c.m || null,
+        coaching: c.coach || null,
+        strengths: c.str || [],
+        opportunities: c.opp || [],
+        prep: c.prep || [],
+        scores: c.s || null,
+      });
     }
   }
 
@@ -428,11 +446,49 @@ function getAccountHistory(callTitle, repId, currentCalls, weeklyHistory) {
   // Sort by date
   priorCalls.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
 
+  // Build cumulative MEDDPICC map — which elements were covered and when
+  const meddpiccLabels = { M: "Metrics", E: "Econ Buyer", DC: "Decision Criteria", DP: "Decision Process", IP: "Identify Pain", Ch: "Champion", Co: "Competition" };
+  const cumulativeMeddpicc = {};
+  for (const key of Object.keys(meddpiccLabels)) {
+    cumulativeMeddpicc[key] = { covered: false, coveredOn: null };
+  }
+  for (const c of priorCalls) {
+    if (!c.meddpicc) continue;
+    for (const [key, val] of Object.entries(c.meddpicc)) {
+      if (val && !cumulativeMeddpicc[key].covered) {
+        cumulativeMeddpicc[key] = { covered: true, coveredOn: `${c.date} (${c.title})` };
+      }
+    }
+  }
+
   return {
     account,
     callNumber: priorCalls.length + 1,
     priorCalls,
+    cumulativeMeddpicc,
+    meddpiccLabels,
   };
+}
+
+function buildCumulativeMeddpicc(thisCallMeddpicc, dealHistory) {
+  // Merge this call's MEDDPICC with cumulative from prior calls
+  const cumulative = { M: 0, E: 0, DC: 0, DP: 0, IP: 0, Ch: 0, Co: 0 };
+
+  // Layer in prior coverage
+  if (dealHistory && dealHistory.cumulativeMeddpicc) {
+    for (const [key, val] of Object.entries(dealHistory.cumulativeMeddpicc)) {
+      if (val.covered) cumulative[key] = 1;
+    }
+  }
+
+  // Layer in this call's coverage
+  if (thisCallMeddpicc) {
+    for (const [key, val] of Object.entries(thisCallMeddpicc)) {
+      if (val) cumulative[key] = 1;
+    }
+  }
+
+  return cumulative;
 }
 
 // ─── Claude API ─────────────────────────────────────────────────────────────
@@ -444,10 +500,44 @@ async function scoreCall(client, callInfo, processedTranscript, dealHistory) {
 
   let dealContext = "";
   if (dealHistory) {
-    const priorList = dealHistory.priorCalls
-      .map((c) => `  - ${c.date}: "${c.title}" (Score: ${c.score}, Stage: ${c.stage || "Unknown"})`)
+    // Build detailed prior call summaries with full context
+    const priorDetails = dealHistory.priorCalls
+      .map((c) => {
+        let detail = `  CALL: "${c.title}" — ${c.date} — Score: ${c.score} — Stage: ${c.stage || "Unknown"}`;
+        if (c.scores) {
+          detail += `\n    Dimensions: Rapport=${c.scores.r} Discovery=${c.scores.d} Value=${c.scores.v} Advancement=${c.scores.a} Control=${c.scores.c} Engagement=${c.scores.e}`;
+        }
+        if (c.meddpicc) {
+          const covered = Object.entries(c.meddpicc).filter(([, v]) => v).map(([k]) => k);
+          detail += `\n    MEDDPICC covered: ${covered.length > 0 ? covered.join(", ") : "none"}`;
+        }
+        if (c.strengths && c.strengths.length > 0) {
+          detail += `\n    Strengths: ${c.strengths.join("; ")}`;
+        }
+        if (c.opportunities && c.opportunities.length > 0) {
+          detail += `\n    Opportunities: ${c.opportunities.join("; ")}`;
+        }
+        if (c.coaching) {
+          detail += `\n    Coaching: ${c.coaching}`;
+        }
+        if (c.prep && c.prep.length > 0) {
+          detail += `\n    Prep/Next steps: ${c.prep.join("; ")}`;
+        }
+        return detail;
+      })
+      .join("\n\n");
+
+    // Build cumulative MEDDPICC status
+    const meddpiccStatus = Object.entries(dealHistory.cumulativeMeddpicc)
+      .map(([key, val]) => {
+        const label = dealHistory.meddpiccLabels[key];
+        return val.covered
+          ? `  ✅ ${key} (${label}): Covered on ${val.coveredOn}`
+          : `  ⬜ ${key} (${label}): Not yet covered`;
+      })
       .join("\n");
-    dealContext = `\n\nDEAL HISTORY — This is call #${dealHistory.callNumber} with ${dealHistory.account}. Prior calls:\n${priorList}\nThis is a FOLLOW-UP call. Do NOT penalize for missing foundational discovery — it was likely covered in earlier calls. Score discovery on validation and progression of prior understanding.\n`;
+
+    dealContext = `\n\nDEAL HISTORY — This is call #${dealHistory.callNumber} with ${dealHistory.account}.\n\nPRIOR CALLS (full context from previous scoring):\n${priorDetails}\n\nCUMULATIVE MEDDPICC STATUS (across all prior calls with this account):\n${meddpiccStatus}\n\nThis is a FOLLOW-UP call. Use the prior call context above to understand what has already been established in this deal. MEDDPICC elements already covered in prior calls should NOT be penalized as missing. For the MEDDPICC coverage output, score ONLY what was newly covered or validated on THIS call. But understand that the deal's overall MEDDPICC health includes all prior coverage shown above. Score discovery on validation and progression of prior understanding, not on re-doing foundational work. Reference prior coaching notes to assess whether the rep acted on previous feedback.\n`;
   }
 
   const prompt = `${SCORING_PROMPT}${dealContext}
@@ -803,6 +893,7 @@ async function main() {
         w: score.weighted,
         tr: score.talkRatio,
         m: score.meddpicc,
+        mc: buildCumulativeMeddpicc(score.meddpicc, dealHistory),
         str: score.strengths || [],
         opp: score.opportunities || [],
         q: score.keyQuote || "",
