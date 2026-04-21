@@ -68,6 +68,14 @@ CRITICAL RULES:
 - Apply epistemic humility — use "the transcript shows" not "the rep felt"
 - Exclude non-prospect calls (kickoffs, existing customers, partner calls)
 
+MULTI-CALL DEAL AWARENESS:
+- MEDDPICC and discovery are multi-call frameworks. Reps do NOT need to re-discover pain, metrics, decision process, etc. on every call.
+- If DEAL HISTORY is provided below, this is a follow-up call. The rep has already had prior conversations with this account. Adjust your expectations accordingly:
+  * On follow-up calls (2nd+), do NOT penalize low discovery scores just because the rep didn't ask foundational questions. Those were likely covered in earlier calls.
+  * Instead, score discovery on whether the rep validated, deepened, or progressed prior understanding (e.g., confirming timeline, checking for changes, surfacing new stakeholders).
+  * Later-stage calls (Pricing, POV, Sync, Contract, Proposal) should be scored primarily on Value, Advancement, and Control, not on foundational discovery.
+  * Only flag discovery gaps if the transcript shows the rep is clearly missing critical info they should have by this stage.
+
 COACHING TONE:
 - You are a supportive coach, not a critic. These reps are busy professionals.
 - Lead with what went well, then offer 1-3 focused improvement points max.
@@ -366,14 +374,83 @@ function processTranscript(transcript, partyMap) {
   };
 }
 
+// ─── Deal History ──────────────────────────────────────────────────────────
+
+function extractAccountName(title) {
+  // Common patterns: "Company X Ocrolus", "Ocrolus <> Company", "Ocrolus + Company", "Company + Ocrolus"
+  // Remove common Ocrolus-side terms and extract the other party
+  const cleaned = title
+    .replace(/\s*[\|—–-]\s*(Demo|Pricing|POV|Sync|Review|Kickoff|Contract|Proposal|Discussion|Debrief|Planning|Test|Architecture|Integration|Tutorial|Conditions|Summary|ROI|Evaluation).*/i, "")
+    .replace(/\s*(Demo|Pricing|POV|Sync|Review|Contract|Proposal)$/i, "")
+    .trim();
+
+  // Try "X <> Y", "X + Y", "X x Y", "X / Y" patterns
+  const separators = /\s*(?:<>|\+|[xX](?=\s)|\|)\s*/;
+  const parts = cleaned.split(separators).map(s => s.trim()).filter(Boolean);
+
+  for (const part of parts) {
+    const lower = part.toLowerCase();
+    if (!lower.includes("ocrolus") && lower.length > 2) {
+      return part.replace(/^(Demo|for)\s+/i, "").trim();
+    }
+  }
+  return null;
+}
+
+function getAccountHistory(callTitle, repId, currentCalls, weeklyHistory) {
+  const account = extractAccountName(callTitle);
+  if (!account) return null;
+
+  const accountLower = account.toLowerCase();
+  const priorCalls = [];
+
+  // Search weekly history (older weeks)
+  if (weeklyHistory) {
+    for (const week of weeklyHistory) {
+      if (!week.calls) continue;
+      for (const c of week.calls) {
+        if (c.rep === repId && c.title && c.title.toLowerCase().includes(accountLower)) {
+          priorCalls.push({ title: c.title, date: c.date, score: c.w, stage: c.stage || c.type });
+        }
+      }
+    }
+  }
+
+  // Search current week's existing calls
+  for (const c of currentCalls) {
+    if (c.rep === repId && c.title && c.title.toLowerCase().includes(accountLower)) {
+      priorCalls.push({ title: c.title, date: c.date, score: c.w, stage: c.stage || c.type });
+    }
+  }
+
+  if (priorCalls.length === 0) return null;
+
+  // Sort by date
+  priorCalls.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+
+  return {
+    account,
+    callNumber: priorCalls.length + 1,
+    priorCalls,
+  };
+}
+
 // ─── Claude API ─────────────────────────────────────────────────────────────
 
-async function scoreCall(client, callInfo, processedTranscript) {
+async function scoreCall(client, callInfo, processedTranscript, dealHistory) {
   const speakerInfo = processedTranscript.speakerSummary
     ? `\n- Speaker Breakdown: ${processedTranscript.speakerSummary}\n\nIMPORTANT: Speakers labeled INTERNAL are Ocrolus employees. Speakers labeled EXTERNAL are prospects/clients. ONLY score the rep's interactions with EXTERNAL speakers. Internal-only conversations (e.g., two INTERNAL speakers chatting before the client joins) should be completely ignored for scoring purposes.`
     : "";
 
-  const prompt = `${SCORING_PROMPT}
+  let dealContext = "";
+  if (dealHistory) {
+    const priorList = dealHistory.priorCalls
+      .map((c) => `  - ${c.date}: "${c.title}" (Score: ${c.score}, Stage: ${c.stage || "Unknown"})`)
+      .join("\n");
+    dealContext = `\n\nDEAL HISTORY — This is call #${dealHistory.callNumber} with ${dealHistory.account}. Prior calls:\n${priorList}\nThis is a FOLLOW-UP call. Do NOT penalize for missing foundational discovery — it was likely covered in earlier calls. Score discovery on validation and progression of prior understanding.\n`;
+  }
+
+  const prompt = `${SCORING_PROMPT}${dealContext}
 
 Call Info:
 - Title: ${callInfo.title}
@@ -693,7 +770,12 @@ async function main() {
         continue;
       }
 
-      const score = await scoreCall(client, call, processed);
+      const dealHistory = getAccountHistory(call.title, rep.id, allCalls, data.weeklyHistory);
+      if (dealHistory) {
+        console.log(`      📋 Deal history: call #${dealHistory.callNumber} with ${dealHistory.account} (${dealHistory.priorCalls.length} prior)`);
+      }
+
+      const score = await scoreCall(client, call, processed, dealHistory);
       if (!score) {
         console.log(`      ⚠️ Scoring failed, skipping`);
         continue;
