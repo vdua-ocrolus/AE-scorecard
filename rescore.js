@@ -288,7 +288,13 @@ function resolveAccount(title, partyMap) {
     const base = domain.split(".")[0];
     fromDomain = base.charAt(0).toUpperCase() + base.slice(1);
   }
-  return { acct: fromTitle || fromDomain, dom: domain };
+  // Prefer domain-based name when title-based looks like a person name
+  // (single word with no spaces is likely a first name, not a company)
+  let acct = fromTitle || fromDomain;
+  if (fromTitle && fromDomain && !fromTitle.includes(" ") && fromTitle.length < 10) {
+    acct = fromDomain;
+  }
+  return { acct, dom: domain };
 }
 
 function callsMatchAccount(c, accountLower, domain) {

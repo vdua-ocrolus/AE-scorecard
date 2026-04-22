@@ -902,6 +902,11 @@ async function main() {
       const acctFromTitle = extractAccountName(call.title);
       const domFromParties = extractDomainFromParties(partyMap);
       const acctFromDomain = domFromParties ? domFromParties.split(".")[0].charAt(0).toUpperCase() + domFromParties.split(".")[0].slice(1) : null;
+      // Prefer domain-based name when title gives a single short word (likely person name)
+      let resolvedAcct = acctFromTitle || acctFromDomain;
+      if (acctFromTitle && acctFromDomain && !acctFromTitle.includes(" ") && acctFromTitle.length < 10) {
+        resolvedAcct = acctFromDomain;
+      }
 
       allCalls.push({
         id: nextId++,
@@ -912,7 +917,7 @@ async function main() {
         dur: `${Math.round(call.duration / 60)}m`,
         type: score.stage || "Call",
         stage: score.stage || "Unknown",
-        acct: acctFromTitle || acctFromDomain,
+        acct: resolvedAcct,
         dom: domFromParties,
         s: {
           r: score.scores.rapport,
