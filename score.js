@@ -376,70 +376,96 @@ function processTranscript(transcript, partyMap) {
 
 // ─── Deal History ──────────────────────────────────────────────────────────
 
+const FREE_DOMAINS = new Set([
+  "gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "aol.com",
+  "icloud.com", "mail.com", "protonmail.com", "live.com", "msn.com",
+  "comcast.net", "verizon.net", "att.net", "ymail.com",
+]);
+
+function extractDomainFromParties(partyMap) {
+  if (!partyMap) return null;
+  const domains = [];
+  for (const [, info] of Object.entries(partyMap)) {
+    if (info.affiliation === "internal" || !info.email) continue;
+    const domain = info.email.split("@")[1]?.toLowerCase();
+    if (domain && !domain.includes("ocrolus") && !FREE_DOMAINS.has(domain)) {
+      domains.push(domain);
+    }
+  }
+  if (domains.length === 0) return null;
+  const counts = {};
+  for (const d of domains) counts[d] = (counts[d] || 0) + 1;
+  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+}
+
+function callsMatchAccount(c, accountLower, domain) {
+  const domBase = domain ? domain.split(".")[0].toLowerCase() : null;
+  if (domain && c.dom && c.dom === domain) return true;
+  if (accountLower && c.acct && c.acct.toLowerCase() === accountLower) return true;
+  if (domBase && c.title && c.title.toLowerCase().includes(domBase)) return true;
+  if (accountLower && c.title && c.title.toLowerCase().includes(accountLower)) return true;
+  if (c.dom && accountLower) {
+    const otherBase = c.dom.split(".")[0].toLowerCase();
+    if (accountLower.includes(otherBase) || otherBase.includes(accountLower)) return true;
+  }
+  return false;
+}
+
 function extractAccountName(title) {
   // Common patterns: "Company X Ocrolus", "Ocrolus <> Company", "Ocrolus + Company", "Company + Ocrolus"
   // Remove common Ocrolus-side terms and extract the other party
-  const cleaned = title
-    .replace(/\s*[\|—–-]\s*(Demo|Pricing|POV|Sync|Review|Kickoff|Contract|Proposal|Discussion|Debrief|Planning|Test|Architecture|Integration|Tutorial|Conditions|Summary|ROI|Evaluation).*/i, "")
-    .replace(/\s*(Demo|Pricing|POV|Sync|Review|Contract|Proposal)$/i, "")
-    .trim();
-
-  // Try "X <> Y", "X + Y", "X x Y", "X / Y" patterns
-  const separators = /\s*(?:<>|\+|[xX](?=\s)|\|)\s*/;
-  const parts = cleaned.split(separators).map(s => s.trim()).filter(Boolean);
+  // Split on common separators: <>, +, X, |, /
+  const separators = /\s*(?:<>|\+|[xX](?=\s)|\||\/)\s*/;
+  const parts = title.split(separators).map(s => s.trim()).filter(Boolean);
 
   for (const part of parts) {
-    const lower = part.toLowerCase();
-    if (!lower.includes("ocrolus") && lower.length > 2) {
-      return part.replace(/^(Demo|for)\s+/i, "").trim();
-    }
+    if (part.toLowerCase().includes("ocrolus")) continue;
+    if (part.length < 2) continue;
+    // Strip parentheticals, dashes, and common suffixes
+    const cleaned = part
+      .replace(/\s*\(.*\)\s*/g, "")
+      .replace(/\s*[—–-]\s*.*/g, "")
+      .replace(/\s*(POV|Demo|Pricing|Sync|Review|Kickoff|Contract|Proposal|Discussion|Debrief|Planning|Test-Drive|Test|Tutorial|Conditions|Summary|ROI|Evaluation|Results|Weekly|Automated|Encompass|Discovery|Tech|AI|Architecture|Next Steps|Final Alignment|Approval|Refresher|Implementation).*$/i, "")
+      .replace(/^(Demo|for)\s+/i, "")
+      .trim();
+    if (cleaned.length >= 2) return cleaned;
   }
   return null;
 }
 
-function getAccountHistory(callTitle, repId, currentCalls, weeklyHistory) {
+function getAccountHistory(callTitle, repId, currentCalls, weeklyHistory, partyMap) {
   const account = extractAccountName(callTitle);
-  if (!account) return null;
+  const domain = extractDomainFromParties(partyMap);
+  if (!account && !domain) return null;
 
-  const accountLower = account.toLowerCase();
+  const accountLower = account ? account.toLowerCase() : null;
   const priorCalls = [];
+
+  function pushIfMatch(c) {
+    if (c.rep !== repId) return;
+    if (!callsMatchAccount(c, accountLower, domain)) return;
+    priorCalls.push({
+      title: c.title, date: c.date, score: c.w,
+      stage: c.stage || c.type,
+      meddpicc: c.m || null,
+      coaching: c.coach || null,
+      strengths: c.str || [],
+      opportunities: c.opp || [],
+      prep: c.prep || [],
+      scores: c.s || null,
+    });
+  }
 
   // Search weekly history (older weeks)
   if (weeklyHistory) {
     for (const week of weeklyHistory) {
       if (!week.calls) continue;
-      for (const c of week.calls) {
-        if (c.rep === repId && c.title && c.title.toLowerCase().includes(accountLower)) {
-          priorCalls.push({
-            title: c.title, date: c.date, score: c.w,
-            stage: c.stage || c.type,
-            meddpicc: c.m || null,
-            coaching: c.coach || null,
-            strengths: c.str || [],
-            opportunities: c.opp || [],
-            prep: c.prep || [],
-            scores: c.s || null,
-          });
-        }
-      }
+      for (const c of week.calls) pushIfMatch(c);
     }
   }
 
   // Search current week's existing calls
-  for (const c of currentCalls) {
-    if (c.rep === repId && c.title && c.title.toLowerCase().includes(accountLower)) {
-      priorCalls.push({
-        title: c.title, date: c.date, score: c.w,
-        stage: c.stage || c.type,
-        meddpicc: c.m || null,
-        coaching: c.coach || null,
-        strengths: c.str || [],
-        opportunities: c.opp || [],
-        prep: c.prep || [],
-        scores: c.s || null,
-      });
-    }
-  }
+  for (const c of currentCalls) pushIfMatch(c);
 
   if (priorCalls.length === 0) return null;
 
@@ -461,8 +487,9 @@ function getAccountHistory(callTitle, repId, currentCalls, weeklyHistory) {
     }
   }
 
+  const displayName = account || (domain ? domain.split(".")[0] : "Unknown");
   return {
-    account,
+    account: displayName,
     callNumber: priorCalls.length + 1,
     priorCalls,
     cumulativeMeddpicc,
@@ -858,7 +885,7 @@ async function main() {
         continue;
       }
 
-      const dealHistory = getAccountHistory(call.title, rep.id, allCalls, data.weeklyHistory);
+      const dealHistory = getAccountHistory(call.title, rep.id, allCalls, data.weeklyHistory, partyMap);
       if (dealHistory) {
         console.log(`      📋 Deal history: call #${dealHistory.callNumber} with ${dealHistory.account} (${dealHistory.priorCalls.length} prior)`);
       }
@@ -871,6 +898,11 @@ async function main() {
 
       if (score.profile) repProfiles[rep.id] = score.profile;
 
+      // Resolve account from title + attendee emails
+      const acctFromTitle = extractAccountName(call.title);
+      const domFromParties = extractDomainFromParties(partyMap);
+      const acctFromDomain = domFromParties ? domFromParties.split(".")[0].charAt(0).toUpperCase() + domFromParties.split(".")[0].slice(1) : null;
+
       allCalls.push({
         id: nextId++,
         rep: rep.id,
@@ -880,6 +912,8 @@ async function main() {
         dur: `${Math.round(call.duration / 60)}m`,
         type: score.stage || "Call",
         stage: score.stage || "Unknown",
+        acct: acctFromTitle || acctFromDomain,
+        dom: domFromParties,
         s: {
           r: score.scores.rapport,
           d: score.scores.discovery,

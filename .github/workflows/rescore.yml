@@ -1,0 +1,50 @@
+name: Rescore Historical Calls
+
+on:
+  workflow_dispatch:
+    inputs:
+      rep:
+        description: 'Rep ID to rescore (kyle, sam, charlie, spencer) or leave blank for all'
+        required: false
+        default: ''
+
+jobs:
+  rescore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run rescore
+        env:
+          GONG_ACCESS_KEY: ${{ secrets.GONG_ACCESS_KEY }}
+          GONG_ACCESS_KEY_SECRET: ${{ secrets.GONG_ACCESS_KEY_SECRET }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -n "${{ github.event.inputs.rep }}" ]; then
+            echo "Rescoring rep: ${{ github.event.inputs.rep }}"
+            node rescore.js ${{ github.event.inputs.rep }}
+          else
+            echo "Rescoring all reps"
+            node rescore.js
+          fi
+
+      - name: Commit and push updated dashboard
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --quiet --cached || git commit -m "Rescore historical calls — $(date +'%Y-%m-%d')"
+          git push

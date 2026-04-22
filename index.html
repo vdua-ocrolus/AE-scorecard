@@ -126,19 +126,28 @@ return{reps,calls,coaching,weekLabel:currentWeekLabel,summaryOnly:false};
 // Build cumulative MEDDPICC for a call by scanning all prior calls with same account
 function getCumMeddpicc(call){
 if(call.mc)return call.mc;
-// Extract account name from title
-const parts=call.title.split(/\s*(?:<>|\+|[xX](?=\s)|\|)\s*/).map(s=>s.trim()).filter(Boolean);
-let acct=null;
-for(const p of parts){if(!p.toLowerCase().includes("ocrolus")&&p.length>2){acct=p.replace(/\s*[\|—–-]\s*(Demo|Pricing|POV|Sync|Review|Kickoff|Contract|Proposal|Discussion|Debrief|Planning|Test|Tutorial|Conditions|Summary|ROI|Evaluation).*/i,"").trim();break}}
-if(!acct)return call.m;
-const al=acct.toLowerCase();
+// Resolve account: prefer stored acct/dom fields, fall back to title parsing
+let acct=call.acct||null;
+const dom=call.dom||null;
+if(!acct){
+const parts=call.title.split(/\s*(?:<>|\+|[xX](?=\s)|\||\/)\s*/).map(s=>s.trim()).filter(Boolean);
+for(const p of parts){if(!p.toLowerCase().includes("ocrolus")&&p.length>1){const cl=p.replace(/\s*\(.*\)\s*/g,"").replace(/\s*[—–-]\s*.*/g,"").replace(/\s*(POV|Demo|Pricing|Sync|Review|Kickoff|Contract|Proposal|Discussion|Debrief|Planning|Test-Drive|Test|Tutorial|Conditions|Summary|ROI|Evaluation|Results|Weekly|Automated|Encompass|Discovery|Tech|AI|Architecture|Next Steps|Final Alignment|Approval|Refresher).*$/i,"").trim();if(cl.length>1){acct=cl;break}}}
+}
+if(!acct&&!dom)return call.m;
+const al=acct?acct.toLowerCase():null;
+const db=dom?dom.split(".")[0].toLowerCase():null;
+function isMatch(c){
+if(dom&&c.dom&&c.dom===dom)return true;
+if(al&&c.acct&&c.acct.toLowerCase()===al)return true;
+if(db&&c.title&&c.title.toLowerCase().includes(db))return true;
+if(al&&c.title&&c.title.toLowerCase().includes(al))return true;
+if(c.dom&&al){const ob=c.dom.split(".")[0].toLowerCase();if(al.includes(ob)||ob.includes(al))return true}
+return false;
+}
 const cum={M:0,E:0,DC:0,DP:0,IP:0,Ch:0,Co:0};
-// Scan all history weeks
 const allHist=[...weeklyHistory];
-for(const w of allHist){if(!w.calls)continue;for(const c of w.calls){if(c.rep===call.rep&&c.title&&c.title.toLowerCase().includes(al)&&c.date!==call.date){MK.forEach(k=>{if(c.m&&c.m[k])cum[k]=1})}}}
-// Scan current week calls
-for(const c of calls){if(c.rep===call.rep&&c.title&&c.title.toLowerCase().includes(al)&&c.id!==call.id&&c.id<call.id){MK.forEach(k=>{if(c.m&&c.m[k])cum[k]=1})}}
-// Layer in this call
+for(const w of allHist){if(!w.calls)continue;for(const c of w.calls){if(c.rep===call.rep&&c.date!==call.date&&isMatch(c)){MK.forEach(k=>{if(c.m&&c.m[k])cum[k]=1})}}}
+for(const c of calls){if(c.rep===call.rep&&c.id!==call.id&&c.id<call.id&&isMatch(c)){MK.forEach(k=>{if(c.m&&c.m[k])cum[k]=1})}}
 MK.forEach(k=>{if(call.m&&call.m[k])cum[k]=1});
 return cum;
 }
