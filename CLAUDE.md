@@ -23,7 +23,7 @@ The scorecard is updated weekly (typically Sundays) and shared with sales leader
 - Filter defaults: `scope = "External"`, `direction = "Conference"`, `duration > 600` seconds
 - Users endpoint paginates at 100 per page; all four reps are known IDs above
 
-## Scoring Framework (v10)
+## Scoring Framework (v10.2)
 
 Four frameworks, weighted:
 
@@ -84,7 +84,7 @@ The processor extracts: opening/middle/pricing/next-steps/closing segments, spea
 - All data is embedded inline (no external API calls from the HTML)
 - Mobile-responsive layout
 
-## Weekly Automation (v10)
+## Weekly Automation (v10.2)
 
 Two scheduled tasks handle the weekly cycle automatically:
 
@@ -132,8 +132,9 @@ AE-Scorecard/
 ├── scripts/
 │   ├── process_transcript.py          ← Mandatory transcript processor
 │   └── generate_docx_template.js      ← DOCX report generator template
-├── CHANGELOG.md                       ← Version history (v7 → v8 → v9)
+├── CHANGELOG.md                       ← Version history (v7 → v8 → v9 → v10 → v10.2)
 ├── AE-Scorer_v10.skill                ← Current skill file (ZIP archive, v10)
+├── rescore.js                         ← One-time rescore script for historical calls
 └── references/
     └── docx_format.md                 ← DOCX formatting specification
 ```

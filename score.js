@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * AE Scorecard — Daily Scoring Pipeline (v10)
+ * AE Scorecard — Daily Scoring Pipeline (v10.2)
  *
  * Runs Mon-Fri at 5am ET via GitHub Actions.
  * 1. Reads existing index.html and extracts cached calls

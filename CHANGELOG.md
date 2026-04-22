@@ -1,5 +1,37 @@
 # AE Scorer — Version Changelog
 
+## v10.2 (2026-04-22)
+
+### New: Multi-Call Deal History Awareness
+- Scoring now pulls full context from prior calls with the same account before scoring a new call
+- Prior call scores, MEDDPICC coverage, coaching notes, strengths, and opportunities are injected into the scoring prompt
+- Follow-up calls (2nd+) are no longer penalized for missing foundational discovery that was covered earlier
+- Later-stage calls scored primarily on Value, Advancement, and Control
+
+### New: Attendee Email-Based Account Matching
+- Account identification now uses Gong attendee email domains alongside call title parsing
+- Calls titled with person names ("Kyle / Benny - Contract Sync") correctly resolve to the company via email domain (e.g., `gulfbank.com`)
+- Each call stores `acct` (resolved account name) and `dom` (external email domain) for reliable cross-call matching
+- Multi-signal matching: domain match, account name match, cross-matching between domain and title
+
+### New: Cumulative MEDDPICC Display
+- Dashboard shows cumulative MEDDPICC coverage across all calls with the same prospect
+- Green dot = covered on this call, blue dot = covered on a prior call, gray = uncovered
+- Detail view shows legend and blue tags with arrow icon for prior-call coverage
+- MEDDPICC % in KPI row and heatmap use cumulative coverage
+
+### New: Rescore Workflow
+- `rescore.js` re-scores historical calls with deal history context
+- Supports single-rep mode (`node rescore.js kyle`) for targeted testing
+- GitHub Actions workflow (`rescore.yml`) for manual trigger with rep input parameter
+
+### New: Slack Bot Token DMs
+- Switched from individual webhooks to Slack Bot Token + chat.postMessage API
+- Daily scorecard notifications go to Vik only
+- Weekly lock notifications go to Vik, Andrew Rains, and John Lowenthal
+
+---
+
 ## v10.1 (2026-04-01)
 **File**: `AE-Scorer_v10.1.skill`
 
