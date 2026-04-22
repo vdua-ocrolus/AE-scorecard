@@ -123,6 +123,25 @@ if(week)return{reps:week.reps,calls:week.calls,coaching:week.coaching,weekLabel:
 }
 return{reps,calls,coaching,weekLabel:currentWeekLabel,summaryOnly:false};
 }
+// Build cumulative MEDDPICC for a call by scanning all prior calls with same account
+function getCumMeddpicc(call){
+if(call.mc)return call.mc;
+// Extract account name from title
+const parts=call.title.split(/\s*(?:<>|\+|[xX](?=\s)|\|)\s*/).map(s=>s.trim()).filter(Boolean);
+let acct=null;
+for(const p of parts){if(!p.toLowerCase().includes("ocrolus")&&p.length>2){acct=p.replace(/\s*[\|—–-]\s*(Demo|Pricing|POV|Sync|Review|Kickoff|Contract|Proposal|Discussion|Debrief|Planning|Test|Tutorial|Conditions|Summary|ROI|Evaluation).*/i,"").trim();break}}
+if(!acct)return call.m;
+const al=acct.toLowerCase();
+const cum={M:0,E:0,DC:0,DP:0,IP:0,Ch:0,Co:0};
+// Scan all history weeks
+const allHist=[...weeklyHistory];
+for(const w of allHist){if(!w.calls)continue;for(const c of w.calls){if(c.rep===call.rep&&c.title&&c.title.toLowerCase().includes(al)&&c.date!==call.date){MK.forEach(k=>{if(c.m&&c.m[k])cum[k]=1})}}}
+// Scan current week calls
+for(const c of calls){if(c.rep===call.rep&&c.title&&c.title.toLowerCase().includes(al)&&c.id!==call.id&&c.id<call.id){MK.forEach(k=>{if(c.m&&c.m[k])cum[k]=1})}}
+// Layer in this call
+MK.forEach(k=>{if(call.m&&call.m[k])cum[k]=1});
+return cum;
+}
 function render(){
 const el=document.getElementById("app");
 const ad=activeData();
@@ -186,7 +205,7 @@ if(st.view==="compare"&&!det){
 h+=`<div class="card" style="overflow-x:auto"><div class="mono" style="font-size:11px;font-weight:600;color:#93c5fd;margin-bottom:12px;letter-spacing:1px">REP COMPARISON</div><table><thead><tr><th>Metric</th>`;
 aReps.forEach(r=>{h+=`<th style="text-align:center">${r.name.split(" ")[0]}</th>`});
 h+=`</tr></thead><tbody>`;
-[{l:"Avg Score",f:r=>r.avg},{l:"Calls",f:r=>r.n},{l:"Profile",f:r=>r.profile},{l:"MEDDPICC %",f:r=>{const rc=aCalls.filter(c=>c.rep===r.id);const t=rc.length*7;if(!t)return"—";const h2=rc.reduce((s,c)=>{const cm5=c.mc||c.m;return s+MK.filter(k=>cm5[k]).length},0);return Math.round(h2/t*100)+"%"}}].forEach(row=>{
+[{l:"Avg Score",f:r=>r.avg},{l:"Calls",f:r=>r.n},{l:"Profile",f:r=>r.profile},{l:"MEDDPICC %",f:r=>{const rc=aCalls.filter(c=>c.rep===r.id);const t=rc.length*7;if(!t)return"—";const h2=rc.reduce((s,c)=>{const cm5=getCumMeddpicc(c);return s+MK.filter(k=>cm5[k]).length},0);return Math.round(h2/t*100)+"%"}}].forEach(row=>{
 h+=`<tr><td style="color:#94a3b8">${row.l}</td>`;
 aReps.forEach(r=>{const v=row.f(r);h+=`<td style="text-align:center;font-weight:${typeof v==="number"?700:400};color:${typeof v==="number"?sc(v):"#94a3b8"}">${v}</td>`});
 h+=`</tr>`;
@@ -229,7 +248,7 @@ if(!rc.length)return;
 h+=`<div style="font-size:11px;font-weight:600;color:${st.rep===r.id?'#e2e8f0':'#64748b'};margin:12px 0 6px;cursor:pointer" onclick="st.rep='${r.id}';st.sel=null;render()">${r.name} <span style="font-size:9px;color:#475569;font-weight:400">${rc.length} calls · avg ${(rc.reduce((a,c)=>a+c.w,0)/rc.length).toFixed(2)}</span></div>`;
 rc.forEach(c=>{
 h+=`<div class="card call-row" style="border-left-color:${sc(c.w)}" onclick="st.rep='${r.id}';st.sel=${c.id};render()"><div style="display:flex;justify-content:space-between;align-items:center;gap:6px"><div style="flex:1;min-width:160px"><div style="font-size:13px;font-weight:600">${c.title}</div><div style="font-size:10px;color:#64748b">${c.prospect} · ${c.date} · ${c.dur}</div></div><div style="display:flex;gap:2px" class="dots-wrap">`;
-MK.forEach(k=>{const cm=c.mc||c.m;h+=`<span class="dot ${c.m[k]?"dot-on":cm[k]?"dot-prior":"dot-off"}"></span>`});
+MK.forEach(k=>{const cm=getCumMeddpicc(c);h+=`<span class="dot ${c.m[k]?"dot-on":cm[k]?"dot-prior":"dot-off"}"></span>`});
 h+=`</div><div style="font-size:18px;font-weight:700;color:${sc(c.w)};min-width:36px;text-align:right">${c.w}</div><div style="color:#475569">›</div></div></div>`;
 });
 });
@@ -238,7 +257,7 @@ h+=`</div><div style="font-size:18px;font-weight:700;color:${sc(c.w)};min-width:
 h+=`<div class="mono" style="font-size:10px;font-weight:600;color:#93c5fd;margin-bottom:8px;letter-spacing:1px;text-transform:uppercase">Calls This Week</div>`;
 f.forEach(c=>{
 h+=`<div class="card call-row" style="border-left-color:${sc(c.w)}" onclick="st.sel=${c.id};render()"><div style="display:flex;justify-content:space-between;align-items:center;gap:6px"><div style="flex:1;min-width:160px"><div style="font-size:13px;font-weight:600">${c.title}</div><div style="font-size:10px;color:#64748b">${c.prospect} · ${c.date} · ${c.dur}</div></div><div style="display:flex;gap:2px" class="dots-wrap">`;
-MK.forEach(k=>{const cm=c.mc||c.m;h+=`<span class="dot ${c.m[k]?"dot-on":cm[k]?"dot-prior":"dot-off"}"></span>`});
+MK.forEach(k=>{const cm=getCumMeddpicc(c);h+=`<span class="dot ${c.m[k]?"dot-on":cm[k]?"dot-prior":"dot-off"}"></span>`});
 h+=`</div><div style="font-size:18px;font-weight:700;color:${sc(c.w)};min-width:36px;text-align:right">${c.w}</div><div style="color:#475569">›</div></div></div>`;
 });
 }
@@ -246,13 +265,13 @@ h+=`</div><div style="font-size:18px;font-weight:700;color:${sc(c.w)};min-width:
 
 // ── MEDDPICC VIEW ──
 if(st.view==="meddpicc"&&!det){
-const mf=MK.map(k=>({k,l:ML[k],n:f.filter(c=>{const cm4=c.mc||c.m;return cm4[k]}).length,f:f.filter(c=>{const cm4=c.mc||c.m;return cm4[k]}).length>=Math.ceil(f.length*.7)?"Always":f.filter(c=>{const cm4=c.mc||c.m;return cm4[k]}).length>=Math.ceil(f.length*.3)?"Sometimes":"Rarely"}));
+const mf=MK.map(k=>({k,l:ML[k],n:f.filter(c=>{const cm4=getCumMeddpicc(c);return cm4[k]}).length,f:f.filter(c=>{const cm4=getCumMeddpicc(c);return cm4[k]}).length>=Math.ceil(f.length*.7)?"Always":f.filter(c=>{const cm4=getCumMeddpicc(c);return cm4[k]}).length>=Math.ceil(f.length*.3)?"Sometimes":"Rarely"}));
 h+=`<div class="card" style="overflow-x:auto"><div class="mono" style="font-size:10px;font-weight:600;color:#93c5fd;margin-bottom:10px;letter-spacing:1px">MEDDPICC — ${rd.name} (${f.length} calls)</div><table><thead><tr><th>Element</th>`;
 f.forEach(c=>{h+=`<th style="text-align:center;font-size:9px;max-width:70px">${c.title.split(" ")[0]}</th>`});
 h+=`<th style="text-align:center">Freq</th></tr></thead><tbody>`;
 mf.forEach(m=>{
 h+=`<tr><td><span class="mono" style="color:#93c5fd;font-size:10px;margin-right:3px">${m.k}</span><span style="color:#94a3b8">${m.l}</span></td>`;
-f.forEach(c=>{const cm3=c.mc||c.m;const thisCall=c.m[m.k];const prior=cm3[m.k]&&!thisCall;h+=`<td style="text-align:center"><div style="width:18px;height:18px;border-radius:3px;margin:0 auto;display:flex;align-items:center;justify-content:center;background:${thisCall?"rgba(16,185,129,0.15)":prior?"rgba(59,130,246,0.12)":"rgba(239,68,68,0.06)"};color:${thisCall?"#10b981":prior?"#3b82f6":"#475569"};font-size:11px;font-weight:600">${thisCall?"✓":prior?"↩":"—"}</div></td>`});
+f.forEach(c=>{const cm3=getCumMeddpicc(c);const thisCall=c.m[m.k];const prior=cm3[m.k]&&!thisCall;h+=`<td style="text-align:center"><div style="width:18px;height:18px;border-radius:3px;margin:0 auto;display:flex;align-items:center;justify-content:center;background:${thisCall?"rgba(16,185,129,0.15)":prior?"rgba(59,130,246,0.12)":"rgba(239,68,68,0.06)"};color:${thisCall?"#10b981":prior?"#3b82f6":"#475569"};font-size:11px;font-weight:600">${thisCall?"✓":prior?"↩":"—"}</div></td>`});
 const fc=m.f==="Always"?"#10b981":m.f==="Sometimes"?"#f59e0b":"#ef4444";
 const fb=m.f==="Always"?"rgba(16,185,129,0.15)":m.f==="Sometimes"?"rgba(245,158,11,0.15)":"rgba(239,68,68,0.1)";
 h+=`<td style="text-align:center"><span class="tag mono" style="background:${fb};color:${fc}">${m.f}</span></td></tr>`;
@@ -423,8 +442,8 @@ const s=det.s[d];const bg=s>=8?"#10b981":s>=7?"#f59e0b":"#ef4444";
 h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0"><span style="font-size:11px;color:#94a3b8;min-width:110px">${DL[d]} <span style="color:#475569;font-size:9px">(${DW[d]})</span></span><div style="display:flex;align-items:center;gap:6px"><div class="bar"><div class="fill" style="width:${s*10}%;background:${bg}"></div></div><span style="font-size:11px;font-weight:600;color:${bg};min-width:20px">${s}</span></div></div>`;
 });
 h+=`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:10px">`;
-const cm2=det.mc||det.m;MK.forEach(k=>{const thisCall=det.m[k];const prior=cm2[k]&&!thisCall;h+=`<div class="tag mono" style="background:${thisCall?"rgba(16,185,129,0.12)":prior?"rgba(59,130,246,0.10)":"rgba(100,116,139,0.06)"};color:${thisCall?"#10b981":prior?"#3b82f6":"#475569"};border:1px solid ${thisCall?"rgba(16,185,129,0.25)":prior?"rgba(59,130,246,0.25)":"#1e293b"}">${k}${prior?" ↩":""}</div>`});
-if(det.mc){h+=`<div style="font-size:9px;color:#64748b;margin-top:4px"><span style="color:#10b981">green</span> = this call &nbsp; <span style="color:#3b82f6">blue ↩</span> = prior call</div>`}
+const cm2=getCumMeddpicc(det);MK.forEach(k=>{const thisCall=det.m[k];const prior=cm2[k]&&!thisCall;h+=`<div class="tag mono" style="background:${thisCall?"rgba(16,185,129,0.12)":prior?"rgba(59,130,246,0.10)":"rgba(100,116,139,0.06)"};color:${thisCall?"#10b981":prior?"#3b82f6":"#475569"};border:1px solid ${thisCall?"rgba(16,185,129,0.25)":prior?"rgba(59,130,246,0.25)":"#1e293b"}">${k}${prior?" ↩":""}</div>`});
+{const cm6=getCumMeddpicc(det);const hasPrior=MK.some(k=>cm6[k]&&!det.m[k]);if(hasPrior){h+=`<div style="font-size:9px;color:#64748b;margin-top:4px"><span style="color:#10b981">green</span> = this call &nbsp; <span style="color:#3b82f6">blue ↩</span> = prior call</div>`}}
 h+=`</div></div>`;
 h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0" class="detail-grid">`;
 h+=`<div class="card"><div class="mono" style="font-size:10px;font-weight:600;color:#10b981;margin-bottom:6px">STRENGTHS</div>`;
