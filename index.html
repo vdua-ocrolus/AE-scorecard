@@ -547,6 +547,8 @@ function handleAdminData(data){
   render();
 }
 
+function isValidEmail(e){return e&&e.indexOf('@')>0&&e!=='Email'}
+
 function renderAdmin(){
   var h='';
   h+='<button class="vtab mono" onclick="st.view=\'overview\';render()" style="margin-bottom:10px;color:#3b82f6;border-color:#3b82f6">&larr; Back to Dashboard</button>';
@@ -556,40 +558,73 @@ function renderAdmin(){
   var rows=adminData.rows||[];
   if(!rows.length){h+='<div style="color:#64748b;font-size:12px">No usage data yet.</div></div>';return h}
 
+  // Filter out header rows and invalid entries
+  var validRows=rows.filter(function(r){var e=r[1]||'';return e!=='Email'&&e!=='email'&&r[0]!=='Timestamp'});
+
   // Parse rows: [timestamp, email, action, userAgent]
-  var users={};var dayMap={};var total=0;var logins=0;
-  rows.forEach(function(r){
-    var ts=r[0],email=r[1]||'unknown',action=r[2]||'',ua=r[3]||'';
+  var users={};var dayMap={};var total=0;var logins=0;var allEvents=[];
+  var now=new Date();var sevenDaysAgo=new Date(now.getTime()-7*24*60*60*1000).toISOString();
+  var last7Users={};
+  validRows.forEach(function(r){
+    var ts=r[0]||'',email=r[1]||'',action=r[2]||'',ua=r[3]||'';
+    if(!isValidEmail(email)&&email!=='')return;
     var day=ts?ts.substring(0,10):'unknown';
-    if(!users[email])users[email]={count:0,lastSeen:'',actions:{}};
-    users[email].count++;
-    users[email].lastSeen=ts>users[email].lastSeen?ts:users[email].lastSeen;
-    users[email].actions[action]=(users[email].actions[action]||0)+1;
+    if(isValidEmail(email)){
+      if(!users[email])users[email]={count:0,lastSeen:'',actions:{},firstSeen:ts};
+      users[email].count++;
+      if(ts>users[email].lastSeen)users[email].lastSeen=ts;
+      if(ts<users[email].firstSeen)users[email].firstSeen=ts;
+      users[email].actions[action]=(users[email].actions[action]||0)+1;
+      if(ts>=sevenDaysAgo){
+        if(!last7Users[email])last7Users[email]={count:0,actions:{}};
+        last7Users[email].count++;
+        last7Users[email].actions[action]=(last7Users[email].actions[action]||0)+1;
+      }
+    }
     dayMap[day]=(dayMap[day]||0)+1;
     total++;
     if(action==='google_sso_login')logins++;
+    allEvents.push({ts:ts,email:email,action:action,ua:ua});
   });
 
-  var uniqueUsers=Object.keys(users).filter(function(e){return e&&e!=='unknown'&&e!==''}).length;
+  var uniqueUsers=Object.keys(users).length;
   var days=Object.keys(dayMap).sort();
-  var last7=days.slice(-7);
-  var last7Total=last7.reduce(function(a,d){return a+dayMap[d]},0);
+  var last7Days=days.filter(function(d){return d>sevenDaysAgo.substring(0,10)});
+  var last7Total=last7Days.reduce(function(a,d){return a+dayMap[d]},0);
+  var last7UniqueCount=Object.keys(last7Users).length;
 
   // KPI cards
   h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">';
   h+='<div style="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:12px;text-align:center"><div class="mono" style="font-size:9px;color:#64748b;margin-bottom:4px">UNIQUE USERS</div><div style="font-size:22px;font-weight:700;color:#8b5cf6">'+uniqueUsers+'</div></div>';
   h+='<div style="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:12px;text-align:center"><div class="mono" style="font-size:9px;color:#64748b;margin-bottom:4px">TOTAL EVENTS</div><div style="font-size:22px;font-weight:700;color:#3b82f6">'+total+'</div></div>';
   h+='<div style="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:12px;text-align:center"><div class="mono" style="font-size:9px;color:#64748b;margin-bottom:4px">SSO LOGINS</div><div style="font-size:22px;font-weight:700;color:#10b981">'+logins+'</div></div>';
-  h+='<div style="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:12px;text-align:center"><div class="mono" style="font-size:9px;color:#64748b;margin-bottom:4px">LAST 7 DAYS</div><div style="font-size:22px;font-weight:700;color:#f59e0b">'+last7Total+'</div></div>';
+  h+='<div style="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:12px;text-align:center"><div class="mono" style="font-size:9px;color:#64748b;margin-bottom:4px">ACTIVE (7D)</div><div style="font-size:22px;font-weight:700;color:#f59e0b">'+last7UniqueCount+'</div></div>';
   h+='</div>';
+  h+='</div>';
+
+  // Last 7 days breakdown
+  var l7Sorted=Object.keys(last7Users).sort(function(a,b){return last7Users[b].count-last7Users[a].count});
+  h+='<div class="card" style="margin-bottom:14px"><div class="mono" style="font-size:11px;font-weight:600;color:#f59e0b;margin-bottom:12px;letter-spacing:1px">LAST 7 DAYS ('+last7Total+' events, '+last7UniqueCount+' users)</div>';
+  if(l7Sorted.length===0){h+='<div style="color:#64748b;font-size:12px">No activity in the last 7 days.</div>'}
+  else{
+    h+='<table><thead><tr><th>User</th><th style="text-align:center">Views</th><th style="text-align:center">Logins</th><th style="text-align:center">Returns</th></tr></thead><tbody>';
+    l7Sorted.forEach(function(email){
+      var u=last7Users[email];
+      h+='<tr><td style="color:#e2e8f0;font-size:11px">'+email+'</td>';
+      h+='<td style="text-align:center;font-weight:600;color:#3b82f6">'+u.count+'</td>';
+      h+='<td style="text-align:center;color:#10b981">'+(u.actions['google_sso_login']||0)+'</td>';
+      h+='<td style="text-align:center;color:#f59e0b">'+(u.actions['return_visit']||0)+'</td></tr>';
+    });
+    h+='</tbody></table>';
+  }
   h+='</div>';
 
   // Daily activity chart (bar chart via divs)
   h+='<div class="card" style="margin-bottom:14px"><div class="mono" style="font-size:11px;font-weight:600;color:#93c5fd;margin-bottom:12px;letter-spacing:1px">DAILY ACTIVITY (LAST 30 DAYS)</div>';
-  var recent=days.slice(-30);
-  var maxDay=Math.max.apply(null,recent.map(function(d){return dayMap[d]}));
+  var recentDays=days.slice(-30);
+  var maxDay=Math.max.apply(null,recentDays.map(function(d){return dayMap[d]}));
   h+='<div style="display:flex;align-items:flex-end;gap:2px;height:80px">';
-  recent.forEach(function(d){
+  recentDays.forEach(function(d){
     var v=dayMap[d];var pct=maxDay>0?Math.round(v/maxDay*100):0;
     var label=d.substring(5);
     h+='<div style="flex:1;display:flex;flex-direction:column;align-items:center;min-width:0">';
@@ -600,20 +635,39 @@ function renderAdmin(){
   });
   h+='</div></div>';
 
-  // User breakdown table
-  var sortedUsers=Object.keys(users).filter(function(e){return e&&e!=='unknown'&&e!==''}).sort(function(a,b){return users[b].count-users[a].count});
-  h+='<div class="card"><div class="mono" style="font-size:11px;font-weight:600;color:#93c5fd;margin-bottom:12px;letter-spacing:1px">USERS ('+sortedUsers.length+')</div>';
-  h+='<table><thead><tr><th>User</th><th style="text-align:center">Total Views</th><th style="text-align:center">Logins</th><th style="text-align:center">Returns</th><th>Last Seen</th></tr></thead><tbody>';
+  // All users table
+  var sortedUsers=Object.keys(users).sort(function(a,b){return users[b].lastSeen.localeCompare(users[a].lastSeen)});
+  h+='<div class="card" style="margin-bottom:14px"><div class="mono" style="font-size:11px;font-weight:600;color:#93c5fd;margin-bottom:12px;letter-spacing:1px">ALL USERS ('+sortedUsers.length+')</div>';
+  h+='<table><thead><tr><th>User</th><th style="text-align:center">Total Views</th><th style="text-align:center">Logins</th><th style="text-align:center">Returns</th><th>First Seen</th><th>Last Seen</th></tr></thead><tbody>';
   sortedUsers.forEach(function(email){
     var u=users[email];
     var loginCount=u.actions['google_sso_login']||0;
     var returnCount=u.actions['return_visit']||0;
     var lastSeen=u.lastSeen?u.lastSeen.substring(0,16).replace('T',' '):'—';
-    h+='<tr><td style="color:#e2e8f0;font-size:11px">'+email+'</td>';
+    var firstSeen=u.firstSeen?u.firstSeen.substring(0,10):'—';
+    var isRecent=u.lastSeen>=sevenDaysAgo;
+    h+='<tr><td style="color:#e2e8f0;font-size:11px">'+email+(isRecent?' <span style="color:#10b981;font-size:9px">active</span>':'')+'</td>';
     h+='<td style="text-align:center;font-weight:600;color:#3b82f6">'+u.count+'</td>';
     h+='<td style="text-align:center;color:#10b981">'+loginCount+'</td>';
     h+='<td style="text-align:center;color:#f59e0b">'+returnCount+'</td>';
+    h+='<td style="color:#64748b;font-size:10px" class="mono">'+firstSeen+'</td>';
     h+='<td style="color:#64748b;font-size:10px" class="mono">'+lastSeen+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+
+  // Recent activity log (last 25 events)
+  var recentEvents=allEvents.filter(function(e){return isValidEmail(e.email)}).slice(-25).reverse();
+  h+='<div class="card"><div class="mono" style="font-size:11px;font-weight:600;color:#93c5fd;margin-bottom:12px;letter-spacing:1px">RECENT ACTIVITY (LAST 25 EVENTS)</div>';
+  h+='<table><thead><tr><th>Time</th><th>User</th><th>Action</th></tr></thead><tbody>';
+  var actionLabels={'google_sso_login':'Login','return_visit':'Return visit','sign_out':'Sign out'};
+  var actionColors={'google_sso_login':'#10b981','return_visit':'#f59e0b','sign_out':'#ef4444'};
+  recentEvents.forEach(function(e){
+    var ts=e.ts?e.ts.substring(0,16).replace('T',' '):'—';
+    var label=actionLabels[e.action]||e.action;
+    var color=actionColors[e.action]||'#94a3b8';
+    h+='<tr><td style="color:#64748b;font-size:10px" class="mono">'+ts+'</td>';
+    h+='<td style="color:#e2e8f0;font-size:11px">'+e.email+'</td>';
+    h+='<td style="color:'+color+';font-size:11px;font-weight:500">'+label+'</td></tr>';
   });
   h+='</tbody></table></div>';
 
