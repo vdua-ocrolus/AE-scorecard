@@ -785,17 +785,35 @@ function toET(date) {
 }
 
 function getWeekRange() {
+  const backfillWeek = process.env.BACKFILL_WEEK;
+  if (backfillWeek) {
+    const monday = new Date(backfillWeek + "T05:00:00Z");
+    const friday = new Date(monday);
+    friday.setUTCDate(friday.getUTCDate() + 4);
+    friday.setUTCHours(23, 59, 59, 999);
+    return { from: toET(monday), to: toET(friday) };
+  }
+
   const now = new Date();
   const day = now.getUTCDay();
   const monday = new Date(now);
-  // Go back to Monday
   monday.setUTCDate(monday.getUTCDate() - (day === 0 ? 6 : day - 1));
-  monday.setUTCHours(5, 0, 0, 0); // 5am UTC = midnight ET
+  monday.setUTCHours(5, 0, 0, 0);
 
   return {
     from: toET(monday),
     to: toET(now),
   };
+}
+
+function getBackfillWeekLabel(mondayISO) {
+  const monday = new Date(mondayISO + "T00:00:00Z");
+  const friday = new Date(monday);
+  friday.setUTCDate(friday.getUTCDate() + 4);
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const monStr = `${months[monday.getUTCMonth()]} ${monday.getUTCDate()}`;
+  const friStr = `${months[friday.getUTCMonth()]} ${friday.getUTCDate()}, ${friday.getUTCFullYear()}`;
+  return `${monStr} – ${friStr}`;
 }
 
 function formatDate(dateStr) {
@@ -815,14 +833,26 @@ function getProspectNames(call) {
 // ─── Main Pipeline ──────────────────────────────────────────────────────────
 
 async function main() {
-  console.log("🚀 AE Scorecard — Daily Run");
+  const backfillWeek = process.env.BACKFILL_WEEK;
+  const backfillLock = process.env.BACKFILL_LOCK === "true";
+
+  if (backfillWeek) {
+    console.log(`🔄 AE Scorecard — Backfill: week of ${backfillWeek}`);
+  } else {
+    console.log("🚀 AE Scorecard — Daily Run");
+  }
 
   // 1. Read existing dashboard
   console.log("📖 Reading existing dashboard...");
   const { html, data, startIdx, endIdx } = readDashboard();
-  const existingCalls = data.calls;
+  const existingCalls = backfillWeek ? [] : data.calls;
   const cachedUrls = new Set(existingCalls.map((c) => c.url));
   console.log(`   ${existingCalls.length} existing calls cached`);
+
+  if (backfillWeek) {
+    data.currentWeekLabel = getBackfillWeekLabel(backfillWeek);
+    console.log(`   Backfill week label: ${data.currentWeekLabel}`);
+  }
 
   // 2. Get date range (Monday of current week to now)
   const { from, to } = getWeekRange();
@@ -1009,27 +1039,54 @@ async function main() {
 
   // 7. Write updated dashboard
   console.log("\n📊 Updating dashboard...");
-  writeDashboard(html, startIdx, endIdx, {
-    reps: updatedReps,
-    calls: allCalls,
-    coaching: updatedCoaching,
-    weeklyHistory: data.weeklyHistory,
-    currentWeekLabel: data.currentWeekLabel,
-  });
+  let finalHistory = data.weeklyHistory;
+  let finalWeekLabel = data.currentWeekLabel;
+
+  if (backfillLock && allCalls.length > 0) {
+    console.log(`   🔒 Backfill lock: archiving week ${data.currentWeekLabel}`);
+    finalHistory = [...data.weeklyHistory, {
+      weekOf: backfillWeek,
+      weekLabel: data.currentWeekLabel,
+      reps: JSON.parse(JSON.stringify(updatedReps)),
+      calls: JSON.parse(JSON.stringify(allCalls)),
+      coaching: JSON.parse(JSON.stringify(updatedCoaching)),
+    }];
+    const nextMon = new Date(backfillWeek + "T00:00:00Z");
+    nextMon.setUTCDate(nextMon.getUTCDate() + 7);
+    finalWeekLabel = getBackfillWeekLabel(nextMon.toISOString().slice(0, 10));
+    writeDashboard(html, startIdx, endIdx, {
+      reps: REPS.map((r) => ({ id: r.id, name: r.name, title: r.title, profile: "Unknown", avg: 0, n: 0 })),
+      calls: [],
+      coaching: Object.fromEntries(REPS.map((r) => [r.id, { narrative: "", keep: "", start: "", stop: "", frameworkCoaching: "" }])),
+      weeklyHistory: finalHistory,
+      currentWeekLabel: finalWeekLabel,
+    });
+    console.log(`   ✅ Week archived. Next week: ${finalWeekLabel}`);
+  } else {
+    writeDashboard(html, startIdx, endIdx, {
+      reps: updatedReps,
+      calls: allCalls,
+      coaching: updatedCoaching,
+      weeklyHistory: finalHistory,
+      currentWeekLabel: finalWeekLabel,
+    });
+  }
   console.log("   ✅ index.html updated");
 
-  // 8. Send Slack summary
-  const sorted = [...updatedReps].sort((a, b) => b.avg - a.avg);
-  const medals = ["🥇", "🥈", "🥉", "4️⃣"];
-  let msg = `📊 *Daily Scorecard Update* — ${newCallCount} new call${newCallCount > 1 ? "s" : ""} scored\n`;
-  msg += `_${allCalls.length} total calls this week_\n\n`;
-  sorted.forEach((r, i) => {
-    msg += `${medals[i] || ""} *${r.name}*: ${r.avg} avg (${r.n} calls)\n`;
-  });
-  msg += `\n🔗 <https://vdua-ocrolus.github.io/AE-scorecard/|Open Dashboard>`;
+  // 8. Send Slack summary (skip during backfill)
+  if (!backfillWeek) {
+    const sorted = [...updatedReps].sort((a, b) => b.avg - a.avg);
+    const medals = ["🥇", "🥈", "🥉", "4️⃣"];
+    let msg = `📊 *Daily Scorecard Update* — ${newCallCount} new call${newCallCount > 1 ? "s" : ""} scored\n`;
+    msg += `_${allCalls.length} total calls this week_\n\n`;
+    sorted.forEach((r, i) => {
+      msg += `${medals[i] || ""} *${r.name}*: ${r.avg} avg (${r.n} calls)\n`;
+    });
+    msg += `\n🔗 <https://vdua-ocrolus.github.io/AE-scorecard/|Open Dashboard>`;
+    await sendSlack(msg);
+  }
 
-  await sendSlack(msg);
-  console.log("\n🎉 Daily scorecard run complete!");
+  console.log(backfillWeek ? `\n🎉 Backfill complete for week of ${backfillWeek}!` : "\n🎉 Daily scorecard run complete!");
 }
 
 main().catch(async (e) => {

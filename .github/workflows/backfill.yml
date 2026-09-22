@@ -1,0 +1,63 @@
+name: Backfill Scorecard
+
+on:
+  workflow_dispatch:
+    inputs:
+      weeks:
+        description: 'Comma-separated Monday dates (YYYY-MM-DD) to backfill, oldest first'
+        required: true
+        default: '2026-08-25,2026-09-01,2026-09-08,2026-09-15'
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Backfill weeks
+        env:
+          GONG_ACCESS_KEY: ${{ secrets.GONG_ACCESS_KEY }}
+          GONG_ACCESS_KEY_SECRET: ${{ secrets.GONG_ACCESS_KEY_SECRET }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          IFS=',' read -ra WEEKS <<< "${{ github.event.inputs.weeks }}"
+          for WEEK in "${WEEKS[@]}"; do
+            WEEK=$(echo "$WEEK" | xargs)
+            echo "========================================="
+            echo "Backfilling week of $WEEK"
+            echo "========================================="
+            BACKFILL_WEEK="$WEEK" BACKFILL_LOCK=true node score.js
+
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add index.html
+            git diff --quiet --cached || git commit -m "Backfill scorecard — week of $WEEK"
+            git push
+          done
+
+      - name: Run current week scoring
+        env:
+          GONG_ACCESS_KEY: ${{ secrets.GONG_ACCESS_KEY }}
+          GONG_ACCESS_KEY_SECRET: ${{ secrets.GONG_ACCESS_KEY_SECRET }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node score.js
+
+      - name: Commit current week
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --quiet --cached || git commit -m "Daily scorecard update — $(date +'%Y-%m-%d')"
+          git push
