@@ -588,7 +588,7 @@ ${processedTranscript.questions.join("\n")}`;
 
   try {
     const response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-6",
       max_tokens: 2000,
       messages: [{ role: "user", content: prompt }],
     });
@@ -626,7 +626,7 @@ ${callCoaching}`;
 
   try {
     const response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-6",
       max_tokens: 2000,
       messages: [{ role: "user", content: prompt }],
     });
@@ -755,16 +755,16 @@ async function postSlackDM(botToken, userId, message) {
 async function sendSlack(message) {
   const promises = [];
 
-  // Webhook for Vik
-  if (process.env.SLACK_WEBHOOK_URL) {
-    promises.push(postToWebhook(process.env.SLACK_WEBHOOK_URL, message));
-  }
+  // Webhook disabled — Vik opted out of daily notifications
+  // if (process.env.SLACK_WEBHOOK_URL) {
+  //   promises.push(postToWebhook(process.env.SLACK_WEBHOOK_URL, message));
+  // }
 
-  // Bot token DM for Vik only (Andrew & John get weekly lock only)
-  const botToken = process.env.SLACK_BOT_TOKEN;
-  if (botToken) {
-    promises.push(postSlackDM(botToken, "U7K3SBGFR", message));   // Vik Dua
-  }
+  // Bot token DM disabled — Vik opted out of daily notifications
+  // const botToken = process.env.SLACK_BOT_TOKEN;
+  // if (botToken) {
+  //   promises.push(postSlackDM(botToken, "U7K3SBGFR", message));
+  // }
 
   if (promises.length === 0) {
     console.log("⚠️ No Slack credentials set, skipping Slack");
